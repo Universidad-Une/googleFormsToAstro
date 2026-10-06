@@ -1,0 +1,31 @@
+---
+import { Image } from "astro:assets";
+import { BookOpen } from "@lucide/astro";
+import Ilustracion from "../../assets/imagenes/ilustracion-inscripcion.webp";
+---
+
+<section aria-labelledby="bienvenida-inscripcion" class="mx-auto mb-10 max-w-4xl overflow-hidden rounded-2xl bg-white shadow-lg">
+  <div class="grid items-center md:grid-cols-2">
+    <div class="space-y-6 p-6 md:p-8">
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-azul-une text-white" aria-hidden="true">
+        <BookOpen size={24} />
+      </div>
+      <h1 id="bienvenida-inscripcion" class="text-2xl font-bold leading-tight text-azul-une md:text-3xl">
+        ¡Bienvenidos a nuestro portal de inscripciones!
+      </h1>
+      <p class="leading-relaxed text-gray-600">
+        A continuación, se te solicitarán algunos datos personales para completar
+        tu solicitud de inscripción a UNE en línea. Una vez que envíes la
+        información, nuestro equipo revisará tu solicitud y se pondrá en contacto
+        contigo para orientarte sobre la documentación y los pasos necesarios
+        para finalizar el proceso. ¡Gracias por tu confianza!
+      </p>
+    </div>
+    <Image
+      src={Ilustracion}
+      alt="Ilustración del proceso de inscripción"
+      class="h-auto w-full object-contain"
+      loading="eager"
+    />
+  </div>
+</section>

@@ -1,0 +1,36 @@
+---
+import { Image } from "astro:assets";
+import LogoUNE from "../../assets/logos/une-enlinea.png";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="pt-12 pb-8">
+  <div class="mx-auto max-w-4xl px-4">
+    <div class="flex justify-center">
+      <Image
+        src={LogoUNE}
+        alt="UNE en línea"
+        class="h-32 w-auto max-w-full md:h-40"
+        loading="lazy"
+      />
+    </div>
+    <div class="mt-8 border-t border-azul-une/15 pt-6 text-center">
+      <p class="text-sm text-azul-une">
+        © {year} UNE - Universidad. Todos los derechos reservados.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  footer {
+    background: linear-gradient(
+      180deg,
+      rgb(255, 255, 255) 0%,
+      rgb(239, 246, 255) 30%,
+      rgb(219, 234, 254) 70%,
+      rgb(191, 219, 254) 100%
+    );
+  }
+</style>

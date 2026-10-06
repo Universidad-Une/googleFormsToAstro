@@ -1,7 +1,15 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Gotham Black";
+  src: url("/fonts/Gotham Black.otf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme {
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: "Gotham Black", ui-sans-serif, system-ui, Arial, sans-serif;
   --color-rojo-une: #e22319;
   --color-azul-une: #001a71;
 }

@@ -1,33 +1,77 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validarInscripcion } from "./inscripcion.js";
-
-const valid = () => Object.fromEntries([
-  ..."apellidoPaterno apellidoMaterno nombres calleNumero colonia codigoPostal municipio estado pais telefono celular rfc nombrePadreTutor ocupacionPadre domicilioPadre telefonoPadre".split(" ").map(k => [k, "Prueba"]),
-  ["correo", "prueba@example.com"], ["fechaNacimiento", "2000-02-29"],
-  ["edad", "26"], ["sexo", "FEMENINO"], ["estadoCivil", "UNION_LIBRE"],
-  ["plantel", "CENTRO MÉDICO"], ["turno", "EN_LINEA"], ["tipoSangre", "O+"],
-]);
-
-test("mapea opciones, conserva fecha y descarta campos ajenos", () => {
-  const { data, errors } = validarInscripcion({ ...valid(), carrera: "omitida", secret: "no reenviar" });
+import { CAMPOS_INSCRIPCION, validarInscripcion } from "./inscripcion.js";
+const valid = () => ({
+  programaAcademico: "Lic. en Administración",
+  apellidoPaterno: "Pérez",
+  apellidoMaterno: "López",
+  nombres: "Ana",
+  genero: "Mujer",
+  edad: "26",
+  telefonoContacto: "3311111111",
+  correo: "prueba@example.com",
+  ciudadEstado: "Guadalajara, Jalisco",
+  mediosSeleccionados: ["Facebook"],
+  compromiso: "Sí",
+});
+test("conserva las nuevas respuestas y elimina campos anteriores", () => {
+  const { data, errors } = validarInscripcion({
+    ...valid(),
+    calleNumero: "omitida",
+    secret: "omitido",
+  });
   assert.deepEqual(errors, {});
-  assert.equal(data.sexo, "Feminino");
-  assert.equal(data.estadoCivil, "Union Libre");
-  assert.equal(data.plantel, "CENTRO MEDICO");
-  assert.equal(data.turno, "EN LINEA");
-  assert.equal(data.fechaNacimiento, "2000-02-29");
-  assert.equal(data.carrera, undefined);
-  assert.equal(data.secret, undefined);
+  assert.deepEqual(data, valid());
+  assert.equal(CAMPOS_INSCRIPCION.length, 11);
 });
-test("admite 0 a 5 razones y rechaza seis", () => {
-  for (const n of [0, 1, 4, 5]) {
-    assert.deepEqual(validarInscripcion({ ...valid(), razonesSeleccionadas: Array.from({length:n}, (_,i) => `Razon ${i}`) }).errors, {});
+test("todos los campos son obligatorios", () => {
+  for (const [field, , type] of CAMPOS_INSCRIPCION) {
+    assert.equal(
+      validarInscripcion({
+        ...valid(),
+        [field]: type === "CHECKBOX" ? [] : " ",
+      }).errors[field],
+      "REQUIRED",
+    );
   }
-  assert.equal(validarInscripcion({ ...valid(), razonesSeleccionadas: ["1","2","3","4","5","6"] }).errors.razonesSeleccionadas, "INVALID_SELECTIONS");
 });
-test("rechaza JSON escalar, requeridos vacíos y fecha imposible", () => {
+test("admite Otro, nueve medios más Otro y ambas respuestas de compromiso", () => {
+  const opciones = CAMPOS_INSCRIPCION.find(
+    ([field]) => field === "mediosSeleccionados",
+  )[5];
+  for (const compromiso of ["Sí", "No"])
+    assert.deepEqual(
+      validarInscripcion({
+        ...valid(),
+        genero: "Personalizado",
+        mediosSeleccionados: [...opciones, "Otro medio"],
+        compromiso,
+      }).errors,
+      {},
+    );
+});
+test("rechaza listas inválidas, duplicados, varios Otros y compromiso desconocido", () => {
+  for (const mediosSeleccionados of [
+    "Facebook",
+    ["Facebook", "Facebook"],
+    ["Otro A", "Otro B"],
+    [" "],
+  ])
+    assert.ok(
+      validarInscripcion({ ...valid(), mediosSeleccionados }).errors
+        .mediosSeleccionados,
+    );
+  assert.equal(
+    validarInscripcion({ ...valid(), compromiso: "Tal vez" }).errors.compromiso,
+    "INVALID_OPTION",
+  );
+  assert.equal(
+    validarInscripcion({ ...valid(), correo: "incorrecto" }).errors.correo,
+    "INVALID_EMAIL",
+  );
+  assert.equal(
+    validarInscripcion({ ...valid(), edad: "121" }).errors.edad,
+    "INVALID_AGE",
+  );
   assert.ok(validarInscripcion(null).errors.formulario);
-  assert.equal(validarInscripcion({ ...valid(), nombres: " " }).errors.nombres, "REQUIRED");
-  assert.equal(validarInscripcion({ ...valid(), fechaNacimiento: "2001-02-29" }).errors.fechaNacimiento, "INVALID_DATE");
 });

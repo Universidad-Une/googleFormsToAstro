@@ -1,2115 +1,446 @@
 ---
-import LoaderCircle from "../../assets/loader-circle.svg";
+import { CAMPOS_INSCRIPCION } from "../../server/inscripcion.js";
+import WelcomeCard from "./WelcomeCard.astro";
+import { LoaderCircle } from "@lucide/astro";
+const grupos = [
+  { titulo: "Datos académicos", campos: ["programaAcademico"] },
+  {
+    titulo: "Datos personales",
+    campos: ["apellidoPaterno", "apellidoMaterno", "nombres", "edad", "genero"],
+  },
+  { titulo: "Datos de domicilio", campos: ["ciudadEstado"] },
+  {
+    titulo: "Datos de contacto",
+    campos: ["telefonoContacto", "correo"],
+  },
+  { titulo: "¿Cómo nos conociste?", campos: ["mediosSeleccionados"] },
+  { titulo: "Compromiso y autorización", campos: ["compromiso"] },
+];
 ---
 
 <section class="py-16 bg-gray-50">
   <div class="container mx-auto px-4">
-    <form class="max-w-6xl mx-auto space-y-8">
-      <!-- Datos Académicos -->
-      <div class="bg-white rounded-xl shadow-sm p-8">
-        <h3 class="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
-          Datos Académicos
-        </h3>
-
-        <div class="grid md:grid-cols-3 gap-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Apellido paterno *
-            </label>
-            <input
-              type="text"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+    <WelcomeCard />
+    <form id="formulario-inscripcion" class="max-w-4xl mx-auto space-y-6">
+      {grupos.map((grupo, index) => (
+        <section
+          aria-labelledby={"grupo-" + index}
+          class="bg-white rounded-xl shadow-sm p-6 md:p-8"
+        >
+          <h2
+            id={"grupo-" + index}
+            class="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200"
+          >
+            {grupo.titulo}
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {CAMPOS_INSCRIPCION.filter(([campo]) =>
+              grupo.campos.includes(campo),
+            )
+              .sort(
+                ([a], [b]) => grupo.campos.indexOf(a) - grupo.campos.indexOf(b),
+              )
+              .map(
+                ([
+                  campo,
+                  id,
+                  tipo,
+                  obligatorio,
+                  titulo,
+                  opciones = [],
+                  permiteOtro = false,
+                ]) => (
+                  <div
+                    data-field={campo}
+                    data-type={tipo}
+                    data-question-id={id}
+                    class:list={{
+                      "md:col-span-2":
+                        tipo !== "TEXT" || grupo.campos.length === 1,
+                    }}
+                  >
+                    {campo === "ciudadEstado" ? (
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {[
+                          { nombre: "ciudad", titulo: "Ciudad" },
+                          { nombre: "estado", titulo: "Estado" },
+                        ].map(({ nombre, titulo }) => (
+                          <div>
+                            <label
+                              for={nombre}
+                              class="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                              {titulo} *
+                            </label>
+                            <input
+                              id={nombre}
+                              name={nombre}
+                              type="text"
+                              maxlength="249"
+                              required={obligatorio}
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : campo === "programaAcademico" || tipo === "LIST" ? (
+                      <>
+                        <label
+                          for={campo}
+                          class="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                          {titulo} *
+                        </label>
+                        <select
+                          id={campo}
+                          name={campo}
+                          required={obligatorio}
+                          class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="" disabled selected>
+                            Elige
+                          </option>
+                          {opciones.map((opcion) => (
+                            <option value={opcion}>{opcion}</option>
+                          ))}
+                        </select>
+                      </>
+                    ) : tipo === "TEXT" ? (
+                      <>
+                        <label
+                          for={campo}
+                          class="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                          {titulo} *
+                        </label>
+                        <input
+                          id={campo}
+                          name={campo}
+                          type={
+                            campo === "correo"
+                              ? "email"
+                              : campo === "telefonoContacto"
+                                ? "tel"
+                                : "text"
+                          }
+                          inputmode={campo === "edad" ? "numeric" : undefined}
+                          pattern={campo === "edad" ? "[0-9]{1,3}" : undefined}
+                          maxlength="500"
+                          required={obligatorio}
+                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </>
+                    ) : (
+                      <fieldset>
+                        <legend class="text-sm font-medium text-gray-700 mb-3 whitespace-pre-line">
+                          {titulo} *
+                        </legend>
+                        <div class:list={["flex flex-wrap gap-4", { "md:flex-nowrap md:items-center": campo === "genero" }]}>
+                          {opciones.map((opcion, index) => (
+                            <label
+                              for={campo + "-" + index}
+                              class="flex items-center gap-2"
+                            >
+                              <input
+                                id={campo + "-" + index}
+                                name={campo}
+                                type={
+                                  tipo === "CHECKBOX" ? "checkbox" : "radio"
+                                }
+                                value={opcion}
+                                required={
+                                  tipo === "MULTIPLE_CHOICE" && obligatorio
+                                }
+                              />
+                              <span>{opcion}</span>
+                            </label>
+                          ))}
+                          {permiteOtro && (
+                            <div
+                              class:list={[
+                                "flex items-center gap-2",
+                                campo === "genero"
+                                ? "w-full md:w-[calc(50%+3.75rem)] md:shrink-0"
+                                  : "flex-wrap",
+                              ]}
+                            >
+                              <label
+                                for={campo + "-otro"}
+                                class:list={["flex shrink-0 items-center gap-2", { "w-18": campo === "genero" }]}
+                              >
+                                <input
+                                  id={campo + "-otro"}
+                                  name={campo}
+                                  type={
+                                    tipo === "CHECKBOX" ? "checkbox" : "radio"
+                                  }
+                                  value="__otro__"
+                                  data-other-choice
+                                  required={
+                                    tipo === "MULTIPLE_CHOICE" && obligatorio
+                                  }
+                                />
+                                <span>Otro</span>
+                              </label>
+                              <input
+                                type="text"
+                                id={campo + "-otro-texto"}
+                                aria-label={"Otra respuesta: " + titulo}
+                                data-other-text
+                                maxlength="500"
+                                disabled
+                                class:list={[
+                                  "border border-gray-300 rounded-lg",
+                                  campo === "genero"
+                                    ? "min-w-0 w-0 flex-1 px-4 py-3 focus:ring-2 focus:ring-blue-500"
+                                    : "px-3 py-2",
+                                ]}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </fieldset>
+                    )}
+                  </div>
+                ),
+              )}
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Apellido materno *
-            </label>
-            <input
-              type="text"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Nombre(s) *
-            </label>
-            <input
-              type="text"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
+        </section>
+      ))}
+      <div class="flex flex-wrap gap-4">
+        <button
+          type="submit"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 text-white rounded-lg disabled:opacity-50"
+        >
+          <LoaderCircle size={20} class="hidden animate-spin" data-loader aria-hidden="true" />
+          <span data-label>Enviar formulario</span>
+        </button>
+        <button
+          type="button"
+          id="btnGenerarPDF"
+          class="inline-flex items-center gap-2 px-6 py-3 border border-blue-700 text-blue-700 rounded-lg disabled:opacity-50"
+        >
+          <LoaderCircle size={20} class="hidden animate-spin" data-loader aria-hidden="true" />
+          <span data-label>Descargar PDF</span>
+        </button>
       </div>
-
-      <!-- Domicilio -->
-      <div class="bg-white rounded-xl shadow-sm p-8">
-        <h3 class="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
-          Domicilio
-        </h3>
-
-        <div class="space-y-6">
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Calle y Número *
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Colonia
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div class="grid md:grid-cols-4 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Código Postal *
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Municipio *
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Estado *
-              </label>
-              <input
-                type="text"
-                value="JALISCO"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                País *
-              </label>
-              <input
-                type="text"
-                value="MÉXICO"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div class="grid md:grid-cols-3 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Teléfono *
-              </label>
-              <input
-                type="tel"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Celular *
-              </label>
-              <input
-                type="tel"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Correo
-              </label>
-              <input
-                type="email"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Fecha de Nacimiento *
-              </label>
-              <input
-                type="date"
-                name="fechaNacimiento"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Edad *
-              </label>
-              <input
-                type="text"
-                name="edad"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Sexo *
-              </label>
-              <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Seleccione</option>
-                <option value="FEMENINO">FEMENINO</option>
-                <option value="MASCULINO">MASCULINO</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Estado Civil *
-              </label>
-              <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Seleccione</option>
-                <option value="SOLTERO">SOLTERO/A</option>
-                <option value="CASADO">CASADO/A</option>
-                <option value="VIUDO">VIUDO/A</option>
-                <option value="DIVORCIADO">DIVORCIADO/A</option>
-                <option value="UNION_LIBRE">UNIÓN LIBRE</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Nacionalidad *
-              </label>
-              <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="MEXICANA">MEXICANA</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Ocupación *
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div class="grid md:grid-cols-3 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                C.U.R.P. *
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                R.F.C.
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Tipo de Sangre *
-              </label>
-              <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Seleccione</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Datos Académicos Section 2 -->
-      <div class="bg-white rounded-xl shadow-sm p-8">
-        <h3 class="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
-          Datos Académicos
-        </h3>
-
-        <div class="space-y-6">
-          <div class="grid md:grid-cols-3 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Plantel *
-              </label>
-              <select
-                name="plantel"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Seleccione</option>
-                <option value="CENTRO">CENTRO</option>
-                <option value="CENTRO MÉDICO">CENTRO MÉDICO</option>
-                <option value="CHAPULTEPEC">CHAPULTEPEC</option>
-                <option value="MILENIO">MILENIO</option>
-                <option value="TESISTÁN">TESISTÁN</option>
-                <option value="TLAJOMULCO">TLAJOMULCO</option>
-                <option value="TLAQUEPAQUE">TLAQUEPAQUE</option>
-                <option value="TONALÁ">TONALÁ</option>
-                <option value="TORRE QUETZAL">TORRE QUETZAL</option>
-                <option value="TORRE UNE MILENIO">TORRE UNE MILENIO</option>
-                <option value="MILENIO">MILENIO</option>
-                <option value="ZAPOPAN">ZAPOPAN</option>
-                <option value="TEPATITLÁN">TEPATITLÁN</option>
-                <option value="AV. MÉXICO">AV. MÉXICO</option>
-                <option value="CAMPUS PUERTO VALLARTA">
-                  CAMPUS PUERTO VALLARTA
-                </option>
-                <option value="CARACOL">CARACOL</option>
-                <option value="LAS JUNTAS">LAS JUNTAS</option>
-                <option value="PLAZA DEL SOL">PLAZA DEL SOL</option>
-                <option value="UNE EN LÍNEA">UNE EN LÍNEA</option>
-                <option value="CENTRO DE IDIOMAS">CENTRO DE IDIOMAS</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Turno *
-              </label>
-              <select
-                name="turno"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Seleccione</option>
-                <option value="MATUTINO">MATUTINO</option>
-                <option value="VESPERTINO">VESPERTINO</option>
-                <option value="NOCTURNO">NOCTURNO</option>
-                <option value="MIXTO">MIXTO</option>
-                <option value="SABATINO">SABATINO</option>
-                <option value="EN_LINEA">EN LÍNEA</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Escuela de proc. *
-              </label>
-              <input
-                type="text"
-                name="escuela_proc"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Ingrese escuela de procedencia"
-              />
-            </div>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Carrera *
-              </label>
-              <select
-                name="carrera"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Seleccione</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Asesor *
-              </label>
-              <select
-                name="asesor"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Seleccione</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Datos Familiares -->
-      <div class="bg-white rounded-xl shadow-sm p-8">
-        <h3 class="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
-          Datos Familiares
-        </h3>
-
-        <div class="space-y-6">
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Nombre del padre o tutor *
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Ocupación *
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Domicilio *
-              </label>
-              <input
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Teléfono *
-              </label>
-              <input
-                type="tel"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Celular *
-            </label>
-            <input
-              type="tel"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- ¿Por qué medio te enteraste de UNE? -->
-      <div class="bg-white rounded-xl shadow-sm p-8">
-        <h3 class="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
-          ¿Por qué medio te enteraste de UNE?
-        </h3>
-
-        <div class="grid md:grid-cols-3 gap-6">
-          <div class="space-y-3">
-            <div class="space-y-2">
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">
-                  Volante o cruceros, trípticos y dípticos
-                </span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Visita en tu escuela</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Página web UNE</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="h-8"></div>
-            <!-- Spacer for alignment -->
-            <div class="space-y-2">
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Redes sociales UNE</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Promoción en stands</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Televisión</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="h-8"></div>
-            <!-- Spacer for alignment -->
-            <div class="space-y-2">
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Espectaculares</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Recomendación</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Razones para elegir UNE -->
-      <div class="bg-white rounded-xl shadow-sm p-8">
-        <h3 class="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
-          Menciona la principal razón por la que elegiste UNE como tu
-          Universidad
-        </h3>
-        <p class="text-gray-700 mb-6">Selecciona las 5 más importantes:</p>
-
-        <div class="grid md:grid-cols-3 gap-6">
-          <div class="space-y-3">
-            <div class="space-y-2">
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Ubicación</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Plan de estudios</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Horarios</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Oferta académica</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="space-y-2">
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Rechazo de la U.D.G.</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Instalaciones</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Nivel académico</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="space-y-2">
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Rechazo de U. de G.</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Mejor opción</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Incorporación</span>
-              </label>
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span class="text-sm">Otro</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- COMPROMISO -->
-      <div class="bg-white rounded-xl shadow-sm p-8">
-        <div class="bg-blue-50 p-6 rounded-lg">
-          <h4 class="font-semibold text-blue-900 mb-4">COMPROMISO</h4>
-          <p class="text-sm text-blue-800 mb-4">
-            Por este medio de la presente solicitud, me comprometo a respetar y
-            hacer valer el reglamento que rige a la Universidad de
-            Especialidades en todos sus términos y me someto a los
-            procedimientos del Departamento de Educación, Comercio de Idiomas y
-            Sanciones correspondientes.
-          </p>
-
-          <div class="grid md:grid-cols-3 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Día *
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="31"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <!-- Campo de Mes en MAYÚSCULAS -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Mes *
-              </label>
-              <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Seleccione</option>
-                <option value="ENERO">ENERO</option>
-                <option value="FEBRERO">FEBRERO</option>
-                <option value="MARZO">MARZO</option>
-                <option value="ABRIL">ABRIL</option>
-                <option value="MAYO">MAYO</option>
-                <option value="JUNIO">JUNIO</option>
-                <option value="JULIO">JULIO</option>
-                <option value="AGOSTO">AGOSTO</option>
-                <option value="SEPTIEMBRE">SEPTIEMBRE</option>
-                <option value="OCTUBRE">OCTUBRE</option>
-                <option value="NOVIEMBRE">NOVIEMBRE</option>
-                <option value="DICIEMBRE">DICIEMBRE</option>
-              </select>
-            </div>
-
-            <!-- Campo de Año como SELECT con colchón de años -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Año *
-              </label>
-              <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">Seleccione</option>
-                <!-- Colchón de años: desde 2020 hasta 2030 -->
-                <option value="2020">2020</option>
-                <option value="2021">2021</option>
-                <option value="2022">2022</option>
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025" selected>
-                  2025
-                </option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-                <option value="2028">2028</option>
-                <option value="2029">2029</option>
-                <option value="2030">2030</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-8 space-y-4">
-          <div class="text-center">
-            <p class="text-sm text-gray-600 mb-4">ATENTAMENTE,</p>
-            <p class="text-sm text-gray-600 mb-4">FIRMA DEL ASPIRANTE</p>
-
-            <!-- Área de firma -->
-            <div class="w-64 mx-auto">
-              <div class="h-32 border-2 border-gray-300 border-dashed rounded-lg flex items-center justify-center p-2">
-                <canvas id="firmaCanvas" class="w-full h-full"></canvas>
-                <input type="hidden" id="firmaImagen" name="firmaImagen" />
-              </div>
-
-              <!-- Botón separado -->
-              <div class="mt-4 flex justify-center">
-                <button
-                  id="limpiarFirma"
-                  type="button"
-                  class="bg-red-500 hover:bg-red-600 text-white font-semibold text-sm py-2 px-4 rounded-md transition-colors duration-200"
-                  aria-label="Limpiar firma"
-                  title="Limpiar firma"
-                >
-                  Limpiar firma
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Botones de acción -->
-          <div class="text-center mt-8 flex flex-col md:flex-row justify-center gap-4">
-            <button
-              id="btnGenerarPDF"
-              type="button"
-              class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 px-12 rounded-lg transition-colors duration-200 text-lg"
-              aria-label="GENERAR PDF"
-              title="GENERAR PDF"
-            >
-              GENERAR PDF
-            </button>
-            <dialog
-              id="estado-generacion-pdf"
-              aria-labelledby="generacion-pdf"
-              aria-describedby="mensaje-generacion-pdf"
-              class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl bg-white p-8 text-center shadow-xl backdrop:bg-black/50"
-            >
-              <div id="progreso-generacion-pdf" class="mb-5" aria-hidden="true">
-                <LoaderCircle class="mx-auto size-12 text-blue-900 motion-safe:animate-spin" />
-              </div>
-              <h2
-                id="generacion-pdf"
-                class="mb-3 text-xl font-bold text-gray-900"
-              >
-                Generando PDF…
-              </h2>
-
-              <div
-                id="mensaje-generacion-pdf"
-                role="status"
-                aria-live="polite"
-                class="text-gray-600 leading-relaxed whitespace-pre-line"
-              ></div>
-              <button
-                id="cerrar-generacion-pdf"
-                type="button"
-                hidden
-                class="mt-6 rounded-lg bg-blue-900 px-6 py-3 font-semibold text-white"
-              >
-                Volver al formulario
-              </button>
-            </dialog>
-
-            <button
-              type="submit"
-              class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-12 rounded-lg transition-colors duration-200 text-lg"
-              aria-label="INSCRIBIRME"
-              title="INSCRIBIRME"
-            >
-              INSCRIBIRME
-            </button>
-          </div>
-        </div>
-      </div>
+      <p
+        id="estado-inscripcion"
+        role="status"
+        aria-live="polite"
+        tabindex="-1"
+      ></p>
     </form>
   </div>
 </section>
 
-<dialog
-  id="estado-inscripcion"
-  aria-labelledby="titulo-inscripcion"
-  aria-describedby="mensaje-inscripcion"
-  class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl bg-white p-8 text-center shadow-xl backdrop:bg-black/50"
->
-  <div id="progreso-inscripcion" class="mb-5" aria-hidden="true">
-    <LoaderCircle class="mx-auto size-12 text-blue-900 motion-safe:animate-spin" />
-  </div>
-  <h2 id="titulo-inscripcion" class="mb-3 text-xl font-bold text-gray-900">
-    Guardando información…
-  </h2>
-  <p
-    id="mensaje-inscripcion"
-    role="status"
-    aria-live="polite"
-    class="text-gray-600 leading-relaxed"
-  ></p>
-  <button
-    id="cerrar-estado-inscripcion"
-    type="button"
-    hidden
-    class="mt-6 rounded-lg bg-blue-900 px-6 py-3 font-semibold text-white"
-  >
-    Volver al formulario
-  </button>
-</dialog>
+<style>
+  form {
+    --color-check: #0069ef;
+  }
+
+  input[type="checkbox"] {
+    accent-color: var(--color-check);
+  }
+
+  input[type="radio"] {
+    appearance: none;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    border: 1px solid #6b7280;
+    border-radius: 3px;
+    background-color: white;
+    cursor: pointer;
+  }
+
+  input[type="radio"]:checked {
+    border-color: var(--color-check);
+    background-color: var(--color-check);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 8 3 3 7-7' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+
+  input[type="radio"]:focus-visible {
+    outline: 2px solid var(--color-check);
+    outline-offset: 3px;
+  }
+
+  @media (forced-colors: active) {
+    input[type="radio"]:checked {
+      background-color: Highlight;
+      border-color: Highlight;
+      background-image: none;
+      box-shadow: inset 0 0 0 3px Canvas;
+    }
+  }
+</style>
 
 <script>
-  // Configuración del canvas para firma
-  const canvas = document.getElementById("firmaCanvas");
-  const ctx = canvas.getContext("2d");
-  const limpiarFirmaBtn = document.getElementById("limpiarFirma");
-  const firmaImagenInput = document.getElementById("firmaImagen");
+  import {
+    CAMPOS_INSCRIPCION,
+    validarInscripcion,
+  } from "../../server/inscripcion.js";
+  const form = document.querySelector<HTMLFormElement>(
+    "#formulario-inscripcion",
+  )!;
+  const submit = form.querySelector<HTMLButtonElement>(
+    'button[type="submit"]',
+  )!;
+  const pdfButton = form.querySelector<HTMLButtonElement>("#btnGenerarPDF")!;
+  const status = document.querySelector<HTMLParagraphElement>(
+    "#estado-inscripcion",
+  )!;
 
-  // Ajustar tamaño real del canvas al renderizar
-  if (canvas) {
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-  }
-
-  let dibujando = false;
-  let xAnterior = 0;
-  let yAnterior = 0;
-
-  function obtenerCoordenadas(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return [clientX - rect.left, clientY - rect.top];
-  }
-
-  function empezarDibujo(e) {
-    dibujando = true;
-    [xAnterior, yAnterior] = obtenerCoordenadas(e);
-  }
-
-  function dibujar(e) {
-    if (!dibujando) return;
-    const [xActual, yActual] = obtenerCoordenadas(e);
-
-    ctx.beginPath();
-    ctx.moveTo(xAnterior, yAnterior);
-    ctx.lineTo(xActual, yActual);
-    ctx.stroke();
-
-    [xAnterior, yAnterior] = [xActual, yActual];
-  }
-
-  function terminarDibujo() {
-    dibujando = false;
-  }
-
-  // Configurar eventos del canvas solo si existe
-  if (canvas) {
-    // Eventos mouse
-    canvas.addEventListener("mousedown", empezarDibujo);
-    canvas.addEventListener("mousemove", dibujar);
-    canvas.addEventListener("mouseup", terminarDibujo);
-    canvas.addEventListener("mouseout", terminarDibujo);
-
-    // Eventos touch
-    canvas.addEventListener("touchstart", empezarDibujo);
-    canvas.addEventListener("touchmove", (e) => {
-      e.preventDefault();
-      dibujar(e);
-    });
-    canvas.addEventListener("touchend", terminarDibujo);
-    canvas.addEventListener("touchcancel", terminarDibujo);
-  }
-
-  // Limpiar firma
-  if (limpiarFirmaBtn) {
-    limpiarFirmaBtn.addEventListener("click", () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (firmaImagenInput) {
-        firmaImagenInput.value = "";
-      }
-    });
-  }
-
-  // Exportar firma en base64
-  function obtenerImagenFirma() {
-    if (!canvas) return "";
-    const imageDataURL = canvas.toDataURL("image/png");
-    if (firmaImagenInput) {
-      firmaImagenInput.value = imageDataURL;
-    }
-    return imageDataURL;
-  }
-</script>
-
-<script is:inline>
-  const DATOS_ACADEMICOS = {
-    asesores: {
-      CENTRO: [
-        "NINGUNO",
-        "BRENDA MICHELLE RAMOS RAMÍREZ",
-        "VERONICA TABARES BECERRA",
-        "CARMEN ALEJANDRA RAMOS GARCÍA",
-      ],
-      "CENTRO MÉDICO": [
-        "NINGUNO",
-        "TANIA GUADALUPE GONZALEZ SOLORIO",
-        "NIDIA CARINA LUEVANO CURIEL",
-      ],
-      MILENIO: [
-        "NINGUNO",
-        "ERNESTO NOE TORRES JUÁREZ",
-        "VALERIA NARAI DELGADILLO VILLALOBOS",
-        "KARLA CECILIA LOMELÍ GONZÁLEZ",
-      ],
-      "PLAZA DEL SOL": ["NINGUNO", "ANETT GÓMEZ PÉREZ"],
-      "PTO. VALLARTA CARACOL": [
-        "NINGUNO",
-        "INGRID ALEJANDRA CARBAJAL MARISCAL",
-        "MAYBETH AYERIN GARCÍA URIBE",
-      ],
-      "PTO. VALLARTA LAS JUNTAS": [
-        "NINGUNO",
-        "NOEMI CASTELLANOS RÍOS",
-        "BETZY YAMILETH PÉREZ VIRGEN",
-        "JONATAN BARRERA ARIAS",
-      ],
-      "PTO. VALLARTA AV. MÉXICO": [
-        "NINGUNO",
-        "MARISOL ROMERO RODRÍGUEZ",
-        "JOSÉ MARÍA ALONSO CASTILLO",
-      ],
-      "CAMPUS PTO. VALLARTA": [
-        "NINGUNO",
-        "JHOSELYN KARELY VILLANUEVA CASTAÑEDA",
-        "LESLIE NASHIRA GARCÍA DELGADO",
-      ],
-      TESISTÁN: [
-        "NINGUNO",
-        "ERIKA MARCELA ESQUEDA DE ANDA",
-        "NOEMI VIRIDIANA RÍOS CORNEJO",
-        "YANNIRETH GONZÁLEZ LÓPEZ",
-      ],
-      TLAJOMULCO: [
-        "NINGUNO",
-        "SONIA ALEJANDRA RODRÍGUEZ GARCÍA",
-        "ULISES GAMALIEL GÓMEZ JIMÉNEZ",
-        "KARLA SUSANA ARECHIGA SALAZAR",
-        "JESÚS EMMANUEL VILLA PRECIADO",
-      ],
-      TLAQUEPAQUE: [
-        "NINGUNO",
-        "BELÉN EUNICE MEJÍA ZAMBRANO",
-        "LILIANA GUILLERMINA DE LA TORRE AGUILAR",
-      ],
-      TONALÁ: [
-        "NINGUNO",
-        "UBALDO ABRAHAM PÉREZ SEGURA",
-        "JAVIER JAUREGUI RUIZ",
-        "ALEJANDRA MONTSERRAT ALANIZ REYES",
-        "ELEANA JOCELYNE VICENCIA CARRILLO",
-      ],
-      "TORRE QUETZAL": ["NINGUNO", "VACANTE", "TOMÁS EFRAÍN FLORES JIMÉNEZ"],
-      "TORRE UNE": [
-        "NINGUNO",
-        "BRIANDA ABIGAIL ESTRADA ARELLANO",
-        "ELIZABETH BARAJAS GARCÍA",
-        "OSCAR DANIEL ZARATE TORRES",
-      ],
-      CHAPULTEPEC: [
-        "NINGUNO",
-        "JENNIFER SUGUEY MACIEL FONSECA",
-        "CYNTHIA MESINOS CARMONA",
-        "ROSENDA ROMERO HERNÁNDEZ",
-      ],
-      ZAPOPAN: [
-        "NINGUNO",
-        "BRAYAN MUNGUIA AVILA",
-        "ANDREA FERNANDA CASTRO CHARLES",
-      ],
-      TEPATITLÁN: ["NINGUNO", "ANAHI BARBA BARBA", "MARÍA JOSÉ RAMÍREZ LÓPEZ"],
-      "EL SALTO": [
-        "NINGUNO",
-        "JENIFER RAQUEL RODRIGUEZ ZAPATA",
-        "NUVIA BERENICE AGUIRRE LEÓN",
-      ],
-    },
-
-    carreras: {
-      CENTRO: [
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "BACHILLERATO GENERAL (UDG)",
-        "ARQUITECTURA",
-        "INGENIERÍA EN COMPUTACIÓN",
-        "DISEÑO GRÁFICO",
-        "NUTRICIÓN",
-        "INGENIERÍA INDUSTRIAL",
-        "INGENIERÍA EN INTELIGENCIA DE DATOS Y CIBERSEGURIDAD",
-        "INGENIERÍA MECÁNICA",
-        "INGENIERÍA EN DESARROLLO DE SOFTWARE",
-        "INGENIERÍA EN COMUNICACIONES Y ELECTRÓNICA",
-        "CIENCIAS DE LA COMUNICACIÓN",
-        "PSICOLOGÍA",
-        "TRABAJO SOCIAL",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-      ],
-      "CENTRO MÉDICO": [
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "BACHILLERATO GENERAL (UDG)",
-        "CIENCIAS DE LA EDUCACIÓN",
-        "CONTADURÍA Y AUDITORÍA",
-        "TRABAJO SOCIAL",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-        "GESTIÓN Y CREACIÓN DE PYME'S",
-        "ALTA DIRECCIÓN",
-        "MERCADOTECNIA INTERNACIONAL",
-      ],
-      MILENIO: [
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "BACHILLERATO GENERAL (UDG)",
-        "PSICOLOGÍA",
-        "INGENIERÍA INDUSTRIAL",
-        "INGENIERÍA EN INTELIGENCIA DE DATOS Y CIBERSEGURIDAD",
-        "INGENIERÍA MECÁNICA",
-        "INGENIERÍA EN DESARROLLO DE SOFTWARE",
-        "INGENIERÍA EN COMUNICACIONES Y ELECTRÓNICA",
-        "CIENCIAS DE LA COMUNICACIÓN",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-      ],
-      "PLAZA DEL SOL": ["SECUNDARIA", "BACHILLERATO GENERAL (UDG)"],
-      TESISTÁN: [
-        "SECUNDARIA",
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "BACHILLERATO GENERAL (UDG)",
-        "PSICOLOGÍA",
-        "INGENIERÍA EN COMUNICACIONES Y ELECTRÓNICA",
-        "INGENIERÍA QUÍMICA",
-        "CRIMINOLOGÍA Y CRIMINALÍSTICA",
-        "INGENIERÍA CIVIL",
-        "CULTURA FÍSICA Y DEL DEPORTE",
-        "TERAPIA FÍSICA",
-        "QUÍMICO FARMACÉUTICO BIÓLOGO",
-        "ARQUITECTURA",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-      ],
-      TLAJOMULCO: [
-        "SECUNDARIA",
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "BACHILLERATO GENERAL (UDG)",
-        "ENFERMERÍA",
-        "ARQUITECTURA",
-        "INGENIERÍA CIVIL",
-        "TERAPIA FÍSICA",
-        "CULTURA FÍSICA Y DEL DEPORTE",
-        "NUTRICIÓN",
-        "GASTRONOMÍA",
-        "PSICOLOGÍA",
-        "QUÍMICO FARMACÉUTICO BIÓLOGO",
-        "INGENIERÍA QUÍMICA",
-        "INGENIERÍA EN INTELIGENCIA DE DATOS Y CIBERSEGURIDAD",
-        "INGENIERÍA MECÁNICA",
-        "INGENIERÍA EN COMUNICACIONES Y ELECTRÓNICA",
-        "CRIMINOLOGÍA Y CRIMINALÍSTICA",
-        "CONTADURÍA Y AUDITORÍA",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-        "MAESTRÍA: ADMINISTRACIÓN HOSPITALARIA",
-      ],
-      TLAQUEPAQUE: [
-        "SECUNDARIA",
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "BACHILLERATO GENERAL (UDG)",
-        "GASTRONOMÍA",
-        "PSICOLOGÍA",
-        "NUTRICIÓN",
-        "TRABAJO SOCIAL",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-      ],
-      TONALÁ: [
-        "SECUNDARIA",
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "BACHILLERATO GENERAL (UDG)",
-        "CIRUJANO DENTISTA",
-        "NUTRICIÓN",
-        "PSICOLOGÍA",
-        "ARQUITECTURA",
-        "CULTURA FÍSICA Y DEL DEPORTE",
-        "CRIMINOLOGÍA Y CRIMINALÍSTICA",
-        "INGENIERÍA CIVIL",
-        "TERAPIA FÍSICA",
-        "GASTRONOMÍA",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-      ],
-      "TORRE QUETZAL": [
-        "ABOGADO",
-        "ADMINISTRACIÓN",
-        "CONTADURÍA PÚBLICA",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-        "CONTADURÍA Y AUDITORÍA",
-        "GESTIÓN Y CREACIÓN DE PYME'S",
-        "ALTA DIRECCIÓN",
-        "DERECHO",
-        "MAESTRÍA: FINANZAS ESTRATÉGICAS",
-        "MAESTRÍA: CIENCIAS DE LA EDUCACIÓN",
-        "MAESTRÍA: ADMINISTRACIÓN DE NEGOCIOS",
-        "MAESTRÍA: TERAPIA FAMILIAR Y SISTÉMICA",
-        "MAESTRÍA: ADMINISTRACIÓN DE RECURSOS HUMANOS",
-        "MAESTRÍA: ADMINISTRACIÓN HOSPITALARIA",
-        "ESPECIALIDAD: CIENCIAS DE LA EDUCACIÓN",
-        "ESPECIALIDAD: ADMINISTRACIÓN DE NEGOCIOS",
-      ],
-      "TORRE UNE MILENIO": [
-        "CIRUJANO DENTISTA",
-        "ENFERMERÍA",
-        "NUTRICIÓN",
-        "PSICOLOGÍA",
-        "QUÍMICO FARMACÉUTICO BIÓLOGO",
-        "CULTURA FÍSICA Y DEL DEPORTE",
-        "TERAPIA FÍSICA",
-      ],
-      CHAPULTEPEC: [
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "CIRUJANO DENTISTA",
-        "ENFERMERÍA",
-        "TERAPIA FÍSICA",
-        "TRABAJO SOCIAL",
-        "INGENIERÍA QUÍMICA",
-        "CRIMINOLOGÍA Y CRIMINALÍSTICA",
-        "QUÍMICO FARMACÉUTICO BIÓLOGO",
-        "NUTRICIÓN",
-        "GASTRONOMÍA",
-        "PSICOLOGÍA",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "CIENCIAS DE LA EDUCACIÓN",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-      ],
-      ZAPOPAN: [
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "BACHILLERATO GENERAL (UDG)",
-        "CIRUJANO DENTISTA",
-        "ENFERMERÍA",
-        "TRABAJO SOCIAL",
-        "CONTADURÍA Y AUDITORÍA",
-        "INGENIERÍA INDUSTRIAL",
-        "INGENIERÍA EN DATOS Y CIBERSEGURIDAD",
-        "INGENIERÍA MECÁNICA",
-        "INGENIERÍA EN DESARROLLO DE SOFTWARE",
-        "INGENIERÍA CIVIL",
-        "ARQUITECTURA",
-        "DISEÑO GRÁFICO",
-        "NUTRICIÓN",
-        "PSICOLOGÍA",
-        "TERAPIA FÍSICA",
-        "QUÍMICO FARMACÉUTICO BIÓLOGO",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "CIENCIAS DE LA EDUCACIÓN",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-      ],
-      TEPATITLÁN: [
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "CIRUJANO DENTISTA",
-        "PSICOLOGÍA",
-        "NUTRICIÓN",
-        "TERAPIA FÍSICA",
-        "QUÍMICO FARMACÉUTICO BIÓLOGO",
-        "CONTADURÍA Y AUDITORÍA",
-        "INGENIERÍA CIVIL",
-        "INGENIERÍA EN DESARROLLO DE SOFTWARE",
-        "INGENIERÍA EN INTELIGENCIA DE DATOS Y CIBERSEGURIDAD",
-        "ARQUITECTURA",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-      ],
-      "AV. MÉXICO": [
-        "SECUNDARIA",
-        "BACHILLERATO GENERAL (UDG)",
-        "PSICOLOGÍA",
-        "CONTADURÍA Y AUDITORÍA",
-        "INGENIERÍA EN INTELIGENCIA DE DATOS Y CIBERSEGURIDAD",
-        "INGENIERÍA MECÁNICA",
-        "INGENIERÍA EN DESARROLLO DE SOFTWARE",
-        "NUTRICIÓN",
-        "QUÍMICO FARMACÉUTICO BIÓLOGO",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "CIENCIAS DE LA EDUCACIÓN",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-        "ALTA DIRECCIÓN",
-        "MERCADOTECNIA INTERNACIONAL",
-        "MAESTRÍA: ADMINISTRACIÓN DE RECURSOS HUMANOS",
-        "MAESTRÍA: DERECHO LABORAL",
-      ],
-      "CAMPUS PUERTO VALLARTA": [
-        "PSICOLOGÍA",
-        "NUTRICIÓN",
-        "TERAPIA FÍSICA",
-        "INGENIERÍA CIVIL",
-        "ARQUITECTURA",
-        "INGENIERÍA MECÁNICA",
-        "INGENIERÍA EN INTELIGENCIA DE DATOS Y CIBERSEGURIDAD",
-        "INGENIERÍA EN DESARROLLO DE SOFTWARE",
-        "CIENCIAS DE LA EDUCACIÓN",
-        "ADMINISTRACIÓN",
-        "NEGOCIOS INTERNACIONALES",
-        "MERCADOTECNIA",
-        "DERECHO",
-        "MAESTRÍA: EDUCACIÓN",
-        "MAESTRÍA: ADMINISTRACIÓN HOSPITALARIA Y GESTIÓN DE LA CALIDAD",
-      ],
-      CARACOL: [
-        "BACHILLERATO INTENSIVO SEMIESCOLARIZADO (BIS)",
-        "NUTRICIÓN",
-        "CONTADURÍA Y AUDITORÍA",
-        "TRABAJO SOCIAL",
-        "PSICOLOGÍA",
-        "ADMINISTRACIÓN DE EMPRESAS",
-        "CIENCIAS DE LA EDUCACIÓN",
-        "DERECHO",
-        "MERCADOTECNIA",
-        "NEGOCIOS INTERNACIONALES",
-        "MAESTRÍA: FINANZAS ESTRATÉGICAS",
-      ],
-      "UNE EN LÍNEA": [
-        "BACHILLERATO",
-        "ADMINISTRACIÓN",
-        "ADMINISTRACIÓN DE SISTEMAS DE INFORMACIÓN",
-        "CONTADURÍA",
-        "MERCADOTECNIA",
-        "COMUNICACIÓN",
-        "DERECHO",
-        "EDUCACIÓN",
-        "PSICOLOGÍA",
-        "COMERCIO Y NEGOCIOS GLOBALES",
-        "DISEÑO GRÁFICO",
-        "INGENIERÍA INDUSTRIAL",
-        "MAESTRÍA EN EDUCACIÓN",
-        "MAESTRÍA EN ADMINISTRACIÓN DE NEGOCIOS",
-      ],
-      "CENTRO DE IDIOMAS": ["FRANCÉS", "INGLÉS"],
-      "LAS JUNTAS": [
-        "CIRUJANO DENTISTA",
-        "ENFERMERÍA",
-        "NUTRICIÓN",
-        "MAESTRÍA: ADMINISTRACIÓN HOSPITALARIA",
-        "MAESTRÍA: ADMINISTRACIÓN DE NEGOCIOS",
-        "MAESTRÍA: CIENCIAS PENALES",
-      ],
-    },
-  };
-
-  // Clase principal del sistema de inscripción
-  class SistemaInscripcion {
-    constructor() {
-      this.elementos = {
-        plantel: null,
-        carrera: null,
-        asesor: null,
-        turno: null,
-        escuelaProcedencia: null,
-        submitButton: null,
-      };
-      this.inicializar();
-    }
-
-    inicializar() {
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => this.configurar());
-      } else {
-        this.configurar();
-      }
-    }
-
-    configurar() {
-      if (!this.obtenerElementos()) {
-        console.error(
-          "Error: No se encontraron todos los elementos del formulario",
+  function sincronizarOpciones() {
+    for (const group of form.querySelectorAll<HTMLElement>("[data-field]")) {
+      const other = group.querySelector<HTMLInputElement>(
+        "[data-other-choice]",
+      );
+      const text = group.querySelector<HTMLInputElement>("[data-other-text]");
+      if (other && text) {
+        text.disabled = !other.checked;
+        text.required = other.checked;
+        text.setCustomValidity(
+          other.checked && !text.value.trim()
+            ? "Escribe tu respuesta en Otro."
+            : "",
         );
-        return;
       }
-
-      this.configurarEventos();
-      this.actualizarDatosAcademicos();
-    }
-
-    obtenerElementos() {
-      this.elementos.plantel = document.querySelector('select[name="plantel"]');
-      this.elementos.carrera = document.querySelector('select[name="carrera"]');
-      this.elementos.asesor = document.querySelector('select[name="asesor"]');
-      this.elementos.turno = document.querySelector('select[name="turno"]');
-      this.elementos.escuelaProcedencia = document.querySelector(
-        'input[name="escuela_proc"]',
-      );
-      this.elementos.submitButton = document.querySelector(
-        'button[type="submit"]',
-      );
-
-      return Object.values(this.elementos).every((el) => el !== null);
-    }
-
-    configurarEventos() {
-      this.elementos.plantel.addEventListener("change", () =>
-        this.actualizarDatosAcademicos(),
-      );
-    }
-
-    actualizarSelect(selectElement, opciones) {
-      selectElement.innerHTML = '<option value="">Seleccione</option>';
-
-      opciones.forEach((opcion) => {
-        const option = document.createElement("option");
-        option.value = opcion;
-        option.textContent = opcion;
-        selectElement.appendChild(option);
-      });
-    }
-
-    actualizarDatosAcademicos() {
-      const plantelSeleccionado = this.elementos.plantel.value;
-
-      if (!plantelSeleccionado) {
-        this.actualizarSelect(this.elementos.carrera, []);
-        this.actualizarSelect(this.elementos.asesor, []);
-        return;
+      if (group.dataset.type === "CHECKBOX") {
+        const first = group.querySelector<HTMLInputElement>(
+          'input[type="checkbox"]',
+        )!;
+        first.setCustomValidity(
+          group.querySelector('input[type="checkbox"]:checked')
+            ? ""
+            : "Selecciona al menos un medio.",
+        );
       }
-
-      const carreras = DATOS_ACADEMICOS.carreras[plantelSeleccionado] || [];
-      const asesores = DATOS_ACADEMICOS.asesores[plantelSeleccionado] || [];
-
-      this.actualizarSelect(this.elementos.carrera, carreras);
-      this.actualizarSelect(this.elementos.asesor, asesores);
     }
+  }
+  form.addEventListener("change", sincronizarOpciones);
+  form.addEventListener("input", sincronizarOpciones);
+  sincronizarOpciones();
 
-    validarFormulario() {
-      const errores = [];
+  function recolectar() {
+    const data: Record<string, string | string[]> = {};
+    for (const group of form.querySelectorAll<HTMLElement>("[data-field]")) {
+      const campo = group.dataset.field!;
+      if (campo === "ciudadEstado") {
+        const ciudad = group
+          .querySelector<HTMLInputElement>('[name="ciudad"]')!
+          .value.trim();
+        const estado = group
+          .querySelector<HTMLInputElement>('[name="estado"]')!
+          .value.trim();
+        data[campo] = ciudad + ", " + estado;
+      } else if (
+        campo === "programaAcademico" ||
+        group.dataset.type === "LIST"
+      ) {
+        data[campo] = group.querySelector<HTMLSelectElement>("select")!.value;
+      } else if (group.dataset.type === "TEXT") {
+        data[campo] = group
+          .querySelector<HTMLInputElement>("input")!
+          .value.trim();
+      } else {
+        const values = Array.from(
+          group.querySelectorAll<HTMLInputElement>("input:checked"),
+          (input) =>
+            input.hasAttribute("data-other-choice")
+              ? group
+                  .querySelector<HTMLInputElement>("[data-other-text]")!
+                  .value.trim()
+              : input.value,
+        );
+        data[campo] =
+          group.dataset.type === "CHECKBOX" ? values : values[0] || "";
+      }
+    }
+    return data;
+  }
+  function datosValidos() {
+    sincronizarOpciones();
+    if (!form.reportValidity()) return null;
+    const { data, errors } = validarInscripcion(recolectar());
+    if (Object.keys(errors).length) {
+      status.textContent =
+        "Revisa estos campos: " + Object.keys(errors).join(", ");
+      status.focus();
+      return null;
+    }
+    return data;
+  }
+  function mostrarCarga(button: HTMLButtonElement, loading: boolean, label: string) {
+    button.disabled = loading;
+    button.setAttribute("aria-busy", String(loading));
+    button.querySelector("[data-loader]")!.classList.toggle("hidden", !loading);
+    button.querySelector("[data-label]")!.textContent = label;
+  }
 
-      const campos = [
-        { elemento: this.elementos.plantel, nombre: "Plantel" },
-        { elemento: this.elementos.turno, nombre: "Turno" },
-        {
-          elemento: this.elementos.escuelaProcedencia,
-          nombre: "Escuela de procedencia",
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (submit.disabled || pdfButton.disabled) return;
+    const data = datosValidos();
+    if (!data) return;
+    mostrarCarga(submit, true, "Enviando…");
+    pdfButton.disabled = true;
+    status.textContent = "Estamos guardando tu inscripción. Espera un momento.";
+    try {
+      const response = await fetch("/api/forms/inscripcion", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-        { elemento: this.elementos.carrera, nombre: "Carrera" },
-        { elemento: this.elementos.asesor, nombre: "Asesor" },
-      ];
-
-      campos.forEach(({ elemento, nombre }) => {
-        if (!elemento.value.trim()) {
-          errores.push(nombre);
-        }
+        body: JSON.stringify(data),
+        signal: AbortSignal.timeout(35000),
       });
-
-      if (errores.length > 0) {
-        alert(
-          `Por favor complete los siguientes campos:\n• ${errores.join("\n• ")}`,
-        );
-        return false;
-      }
-
-      return true;
-    }
-
-    obtenerDatosFormulario() {
-      return {
-        plantel: this.elementos.plantel.value,
-        turno: this.elementos.turno.value,
-        escuelaProcedencia: this.elementos.escuelaProcedencia.value,
-        carrera: this.elementos.carrera.value,
-        asesor: this.elementos.asesor.value,
-      };
-    }
-
-    manejarEnvio(evento) {
-      evento.preventDefault();
-
-      if (!this.validarFormulario()) {
+      const result = await response.json();
+      if (response.ok && result.success === true) {
+        status.textContent = "Tu solicitud se registró correctamente. Redirigiendo…";
+        window.location.assign("/gracias");
         return;
       }
-
-      const datos = this.obtenerDatosFormulario();
-      console.log("Formulario válido - Datos:", datos);
+      status.textContent =
+        result.message ||
+        "No pudimos confirmar la inscripción. Verifica si se registró antes de repetir el envío.";
+    } catch {
+      status.textContent =
+        "No pudimos confirmar el registro. Verifica si se guardó antes de repetir el envío.";
     }
-  }
+    mostrarCarga(submit, false, "Enviar formulario");
+    pdfButton.disabled = false;
+    status.focus();
+  });
 
-  // Inicializar el sistema
-  new SistemaInscripcion();
-</script>
-
-<script is:inline>
-  const API_URL = "/api/forms/inscripcion";
-
-  class FormularioInscripcion {
-    constructor() {
-      this.submitButton = null;
-      this.inicializar();
-    }
-
-    inicializar() {
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => this.configurar());
-      } else {
-        this.configurar();
-      }
-    }
-
-    configurar() {
-      this.submitButton = document.querySelector('button[type="submit"]');
-
-      if (!this.submitButton) {
-        console.error("No se encontró el botón de submit");
-        return;
-      }
-
-      this.configurarEventos();
-      this.configurarCheckboxes();
-      this.configurarCalculoEdad();
-    }
-
-    configurarEventos() {
-      this.submitButton
-        .closest("form")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          await this.enviarFormulario();
-        });
-      const dialogo = document.getElementById("estado-inscripcion");
-      document
-        .getElementById("cerrar-estado-inscripcion")
-        .addEventListener("click", () => dialogo.close());
-      dialogo.addEventListener("cancel", (event) => {
-        if (this.submitButton.disabled) event.preventDefault();
-      });
-    }
-
-    configurarCalculoEdad() {
-      const fechaNacimientoInput = document.querySelector(
-        'input[name="fechaNacimiento"]',
+  pdfButton.addEventListener("click", async () => {
+    if (pdfButton.disabled || submit.disabled) return;
+    const data = datosValidos();
+    if (!data) return;
+    mostrarCarga(pdfButton, true, "Generando PDF…");
+    submit.disabled = true;
+    status.textContent = "Estamos preparando tu PDF.";
+    try {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const { generarPdfInscripcion } = await import("./pdf.js");
+      const bytes = await generarPdfInscripcion(data, CAMPOS_INSCRIPCION);
+      const url = URL.createObjectURL(
+        new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
       );
-      const edadInput = document.querySelector('input[name="edad"]');
-
-      if (fechaNacimientoInput && edadInput) {
-        fechaNacimientoInput.addEventListener("change", (e) => {
-          edadInput.value = this.calcularEdad(e.target.value);
-        });
-      }
-    }
-
-    calcularEdad(fechaNacimiento) {
-      const hoy = new Date();
-      const nacimiento = new Date(fechaNacimiento);
-      let edad = hoy.getFullYear() - nacimiento.getFullYear();
-      const mes = hoy.getMonth() - nacimiento.getMonth();
-
-      if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-        edad--;
-      }
-
-      return edad.toString();
-    }
-
-    configurarCheckboxes() {
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-
-      checkboxes.forEach((cb, index) => {
-        if (index < 8) {
-          cb.setAttribute("data-group", "medios");
-          cb.setAttribute(
-            "value",
-            cb.nextElementSibling?.textContent?.trim() || `medio${index}`,
-          );
-        } else {
-          cb.setAttribute("data-group", "razones");
-          cb.setAttribute(
-            "value",
-            cb.nextElementSibling?.textContent?.trim() || `razon${index}`,
-          );
-
-          cb.addEventListener("change", () => {
-            const checkedRazones = document.querySelectorAll(
-              'input[type="checkbox"][data-group="razones"]:checked',
-            );
-            if (checkedRazones.length > 5) {
-              cb.checked = false;
-              alert("Solo puedes seleccionar máximo 5 razones.");
-            }
-          });
-        }
-      });
-    }
-
-    obtenerCheckboxesSeleccionados(grupo) {
-      const checkboxes = document.querySelectorAll(
-        `input[type="checkbox"][data-group="${grupo}"]:checked`,
-      );
-      return Array.from(checkboxes).map((cb) => cb.value);
-    }
-
-    obtenerPorSeccion(seccionIndex, inputIndex, tipo = "text") {
-      const secciones = document.querySelectorAll(
-        ".bg-white.rounded-xl.shadow-sm",
-      );
-      if (secciones[seccionIndex]) {
-        const inputs = secciones[seccionIndex].querySelectorAll(
-          `input[type="${tipo}"]`,
-        );
-        return inputs[inputIndex] ? inputs[inputIndex].value : "";
-      }
-      return "";
-    }
-
-    obtenerSelectPorSeccion(seccionIndex, selectIndex) {
-      const secciones = document.querySelectorAll(
-        ".bg-white.rounded-xl.shadow-sm",
-      );
-      if (secciones[seccionIndex]) {
-        const selects = secciones[seccionIndex].querySelectorAll("select");
-        return selects[selectIndex] ? selects[selectIndex].value : "";
-      }
-      return "";
-    }
-
-    obtenerValor(name) {
-      const element = document.querySelector(`[name="${name}"]`);
-      return element ? element.value : "";
-    }
-
-    prepararPayload() {
-      const fechaActual = new Date();
-      const fechaRegistro = fechaActual.toISOString().split("T")[0];
-
-      const dia = this.obtenerPorSeccion(6, 0, "number");
-      const mes = this.obtenerSelectPorSeccion(6, 0);
-      const año = this.obtenerSelectPorSeccion(6, 1);
-
-      const mediosSeleccionados = this.obtenerCheckboxesSeleccionados("medios");
-      const razonesSeleccionadas =
-        this.obtenerCheckboxesSeleccionados("razones");
-
-      return {
-        nombre: this.obtenerPorSeccion(0, 2),
-        apellidoPaterno: this.obtenerPorSeccion(0, 0),
-        apellidoMaterno: this.obtenerPorSeccion(0, 1),
-        nombres: this.obtenerPorSeccion(0, 2),
-
-        calleNumero: this.obtenerPorSeccion(1, 0),
-        colonia: this.obtenerPorSeccion(1, 1),
-        codigoPostal: this.obtenerPorSeccion(1, 2),
-        municipio: this.obtenerPorSeccion(1, 3),
-        estado: this.obtenerPorSeccion(1, 4) || "JALISCO",
-        pais: this.obtenerPorSeccion(1, 5) || "MÉXICO",
-
-        telefono: this.obtenerPorSeccion(1, 0, "tel"),
-        celular: this.obtenerPorSeccion(1, 1, "tel"),
-        correo: this.obtenerPorSeccion(1, 0, "email"),
-
-        fechaNacimiento: this.obtenerPorSeccion(1, 0, "date"),
-        edad: this.obtenerPorSeccion(1, 6),
-        sexo: this.obtenerSelectPorSeccion(1, 0),
-        estadoCivil: this.obtenerSelectPorSeccion(1, 1),
-        nacionalidad: this.obtenerSelectPorSeccion(1, 2) || "MEXICANA",
-        ocupacion: this.obtenerPorSeccion(1, 7),
-        curp: this.obtenerPorSeccion(1, 8),
-        rfc: this.obtenerPorSeccion(1, 9),
-        tipoSangre: this.obtenerSelectPorSeccion(1, 3),
-
-        nivelEducativo: "LICENCIATURA",
-        plantel: this.obtenerValor("plantel"),
-        turno: this.obtenerValor("turno"),
-        escuelaProcedencia: this.obtenerValor("escuela_proc"),
-        promedio: this.obtenerPorSeccion(2, 0, "number") || "",
-        carrera: this.obtenerValor("carrera"),
-        asesor: this.obtenerValor("asesor"),
-
-        nombrePadreTutor: this.obtenerPorSeccion(3, 0),
-        ocupacionPadre: this.obtenerPorSeccion(3, 1),
-        domicilioPadre: this.obtenerPorSeccion(3, 2),
-        telefonoPadre: this.obtenerPorSeccion(3, 0, "tel"),
-        celularPadre: this.obtenerPorSeccion(3, 1, "tel"),
-
-        "Medios Seleccionados:": mediosSeleccionados.join(", ") || "Ninguno",
-        mediosSeleccionados: mediosSeleccionados,
-        razonesSeleccionadas: razonesSeleccionadas,
-
-        fechaRegistro: fechaRegistro,
-        dateFields: fechaRegistro,
-        dia: dia,
-        mes: mes,
-        año: año,
-
-        firmaImagen: "",
-      };
-    }
-
-    validarFormulario() {
-      return this.submitButton.closest("form").reportValidity();
-    }
-
-    mostrarEstado(mensaje) {
-      const dialogo = document.getElementById("estado-inscripcion");
-      document.getElementById("mensaje-inscripcion").textContent = mensaje;
-      if (!dialogo.open) dialogo.showModal();
-    }
-
-    deshabilitarBoton() {
-      document.getElementById("titulo-inscripcion").textContent =
-        "Guardando información…";
-      document.getElementById("cerrar-estado-inscripcion").hidden = true;
-      document.getElementById("progreso-inscripcion").hidden = false;
-      this.mostrarEstado(
-        "Estamos guardando tu inscripción. Espera un momento.",
-      );
-      this.originalText = this.submitButton.textContent;
-      this.submitButton.disabled = true;
-      this.submitButton.textContent = "ENVIANDO...";
-      this.submitButton.classList.add("opacity-50", "cursor-not-allowed");
-    }
-
-    habilitarBoton() {
-      this.submitButton.disabled = false;
-      this.submitButton.textContent = this.originalText;
-      this.submitButton.classList.remove("opacity-50", "cursor-not-allowed");
-    }
-
-    async enviarFormulario() {
-      if (this.submitButton.disabled || !this.validarFormulario()) {
-        return;
-      }
-
-      const payload = this.prepararPayload();
-      this.deshabilitarBoton();
-      let redirigiendo = false;
-
-      try {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(35000),
-        });
-
-        const responseData = await response.json();
-
-        if (response.status === 200 && responseData.success === true) {
-          redirigiendo = true;
-          document.getElementById("titulo-inscripcion").textContent =
-            "Información recibida";
-          this.mostrarEstado("¡Inscripción registrada correctamente!");
-          window.location.href = "/gracias";
-        } else {
-          this.mostrarEstado(
-            response.status === 400
-              ? "Revisa que los datos obligatorios estén completos y que el correo, la fecha de nacimiento y las opciones seleccionadas sean válidos. Después vuelve a enviar el formulario."
-              : response.status === 503
-                ? "El servicio de inscripción no está disponible en este momento. Inténtalo más tarde."
-                : "No pudimos confirmar tu inscripción. Verifica si se registró antes de volver a enviarla.",
-          );
-        }
-      } catch (error) {
-        this.mostrarEstado(
-          "No pudimos confirmar el registro. Verifica si se guardó antes de repetir el envío.",
-        );
-      } finally {
-        if (!redirigiendo) {
-          document.getElementById("titulo-inscripcion").textContent =
-            "No se pudo completar el envío";
-          document.getElementById("cerrar-estado-inscripcion").hidden = false;
-          document.getElementById("progreso-inscripcion").hidden = true;
-          this.habilitarBoton();
-          document.getElementById("cerrar-estado-inscripcion").focus();
-        }
-      }
-    }
-  }
-
-  new FormularioInscripcion();
-</script>
-
-<script>
-  class GeneradorPDFInscripcion {
-    constructor() {
-      this.coordenadas = {
-        apellidoPaterno: { x: 120, y: 598 },
-        apellidoMaterno: { x: 390, y: 598 },
-        nombres: { x: 110, y: 575 },
-        calleNumero: { x: 110, y: 540 },
-        colonia: { x: 70, y: 515 },
-        codigoPostal: { x: 255, y: 515 },
-        municipio: { x: 360, y: 515 },
-        estado: { x: 70, y: 492 },
-        pais: { x: 320, y: 492 },
-        telefono: { x: 75, y: 470 },
-        celular: { x: 205, y: 470 },
-        correo: { x: 325, y: 470 },
-        fechaNacimiento: { x: 135, y: 445 },
-        edad: { x: 235, y: 445 },
-        sexo: { x: 290, y: 445 },
-        estadoCivil: { x: 400, y: 445 },
-        nacionalidad: { x: 110, y: 423 },
-        ocupacion: { x: 350, y: 423 },
-        curp: { x: 70, y: 398 },
-        rfc: { x: 238, y: 398 },
-        tipoSangre: { x: 500, y: 398 },
-        plantel: { x: 215, y: 710 },
-        turno: { x: 210, y: 688 },
-        escuelaProcedencia: { x: 450, y: 688 },
-        carrera: { x: 235, y: 662 },
-        asesor: { x: 235, y: 642 },
-        nombrePadreTutor: { x: 160, y: 354 },
-        ocupacionPadre: { x: 410, y: 354 },
-        domicilioPadre: { x: 75, y: 330 },
-        telefonoPadre: { x: 260, y: 330 },
-        celularPadre: { x: 399, y: 330 },
-        dia: { x: 200, y: 85 },
-        mes: { x: 380, y: 85 },
-        año: { x: 517, y: 83 },
-      };
-
-      this.coordenadasMedios = {
-        "Volante o cruceros, trípticos y dípticos": { x: 29, y: 278 },
-        "Visita en tu escuela": { x: 187, y: 278 },
-        "Página web UNE": { x: 353, y: 278 },
-        "Redes sociales UNE": { x: 505, y: 278 },
-        "Promoción en stands": { x: 29, y: 252 },
-        Televisión: { x: 187, y: 252 },
-        Espectaculares: { x: 353, y: 253 },
-        Recomendación: { x: 505, y: 253 },
-        Ubicación: { x: 34, y: 191 },
-        "Plan de estudios": { x: 325, y: 191 },
-        Horarios: { x: 34, y: 172 },
-        "Oferta académica": { x: 325, y: 172 },
-        "Rechazo de la U.D.G.": { x: 142, y: 191 },
-        Instalaciones: { x: 142, y: 172 },
-        "Nivel académico": { x: 418, y: 172 },
-        "Rechazo de U. de G.": { x: 418, y: 191 },
-        "Mejor opción": { x: 528, y: 191 },
-        Incorporación: { x: 235, y: 172 },
-        Otro: { x: 528, y: 172 },
-      };
-
-      this.inicializar();
-    }
-
-    inicializar() {
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => this.configurar());
-      } else {
-        this.configurar();
-      }
-    }
-
-    configurar() {
-      const btnGenerarPDF = document.getElementById("btnGenerarPDF");
-      this.boton = btnGenerarPDF;
-      this.dialogo = document.getElementById("estado-generacion-pdf");
-      this.cerrar = document.getElementById("cerrar-generacion-pdf");
-      this.generando = false;
-      this.cerrar.addEventListener("click", () => this.dialogo.close());
-      this.dialogo.addEventListener("cancel", (event) => {
-        if (this.generando) event.preventDefault();
-      });
-      this.dialogo.addEventListener("close", () => this.boton.focus());
-
-      if (btnGenerarPDF) {
-        btnGenerarPDF.addEventListener("click", (e) => {
-          e.preventDefault();
-          this.generar();
-        });
-      }
-    }
-
-    mostrarEstadoPDF(titulo, mensaje, cargando = false) {
-      document.getElementById("generacion-pdf").textContent = titulo;
-      document.getElementById("mensaje-generacion-pdf").textContent = mensaje;
-      document.getElementById("progreso-generacion-pdf").hidden = !cargando;
-      this.cerrar.hidden = cargando;
-      if (!this.dialogo.open) this.dialogo.showModal();
-      if (!cargando) this.cerrar.focus();
-    }
-
-    obtenerValor(name) {
-      const element = document.querySelector(`[name="${name}"]`);
-      return element ? element.value : "";
-    }
-
-    obtenerPorSeccion(seccionIndex, inputIndex, tipo = "text") {
-      const secciones = document.querySelectorAll(
-        ".bg-white.rounded-xl.shadow-sm",
-      );
-      if (secciones[seccionIndex]) {
-        const inputs = secciones[seccionIndex].querySelectorAll(
-          `input[type="${tipo}"]`,
-        );
-        return inputs[inputIndex] ? inputs[inputIndex].value : "";
-      }
-      return "";
-    }
-
-    obtenerSelectPorSeccion(seccionIndex, selectIndex) {
-      const secciones = document.querySelectorAll(
-        ".bg-white.rounded-xl.shadow-sm",
-      );
-      if (secciones[seccionIndex]) {
-        const selects = secciones[seccionIndex].querySelectorAll("select");
-        return selects[selectIndex] ? selects[selectIndex].value : "";
-      }
-      return "";
-    }
-
-    obtenerCheckboxesMarcados() {
-      const checkboxes = document.querySelectorAll(
-        'input[type="checkbox"]:checked',
-      );
-      return Array.from(checkboxes).map((checkbox) => {
-        const label = checkbox.parentElement.querySelector("span");
-        return label ? label.textContent.trim() : "";
-      });
-    }
-
-    obtenerImagenFirma() {
-      const canvas = document.getElementById("firmaCanvas");
-      if (canvas) {
-        return canvas.toDataURL("image/png");
-      }
-      return "";
-    }
-
-    recolectarDatos() {
-      return {
-        apellidoPaterno: this.obtenerPorSeccion(0, 0),
-        apellidoMaterno: this.obtenerPorSeccion(0, 1),
-        nombres: this.obtenerPorSeccion(0, 2),
-        calleNumero: this.obtenerPorSeccion(1, 0),
-        colonia: this.obtenerPorSeccion(1, 1),
-        codigoPostal: this.obtenerPorSeccion(1, 2),
-        municipio: this.obtenerPorSeccion(1, 3),
-        estado: this.obtenerPorSeccion(1, 4),
-        pais: this.obtenerPorSeccion(1, 5),
-        telefono: this.obtenerPorSeccion(1, 0, "tel"),
-        celular: this.obtenerPorSeccion(1, 1, "tel"),
-        correo: this.obtenerPorSeccion(1, 0, "email"),
-        fechaNacimiento: this.obtenerPorSeccion(1, 0, "date"),
-        edad: this.obtenerPorSeccion(1, 6),
-        sexo: this.obtenerSelectPorSeccion(1, 0),
-        estadoCivil: this.obtenerSelectPorSeccion(1, 1),
-        nacionalidad: this.obtenerSelectPorSeccion(1, 2),
-        ocupacion: this.obtenerPorSeccion(1, 7),
-        curp: this.obtenerPorSeccion(1, 8),
-        rfc: this.obtenerPorSeccion(1, 9),
-        tipoSangre: this.obtenerSelectPorSeccion(1, 3),
-        plantel: this.obtenerValor("plantel"),
-        turno: this.obtenerValor("turno"),
-        escuelaProcedencia: this.obtenerValor("escuela_proc"),
-        carrera: this.obtenerValor("carrera"),
-        asesor: this.obtenerValor("asesor"),
-        nombrePadreTutor: this.obtenerPorSeccion(3, 0),
-        ocupacionPadre: this.obtenerPorSeccion(3, 1),
-        domicilioPadre: this.obtenerPorSeccion(3, 2),
-        telefonoPadre: this.obtenerPorSeccion(3, 0, "tel"),
-        celularPadre: this.obtenerPorSeccion(3, 1, "tel"),
-        mediosSeleccionados: this.obtenerCheckboxesMarcados(),
-        dia: this.obtenerPorSeccion(6, 0, "number"),
-        mes: this.obtenerSelectPorSeccion(6, 0),
-        año: this.obtenerSelectPorSeccion(6, 1),
-        firmaImagen: this.obtenerImagenFirma(),
-      };
-    }
-
-    determinarRequisitos(nivel) {
-      const nivelLower = nivel.toLowerCase();
-
-      if (nivelLower.includes("secundaria")) return "/pdfs/secundaria_req.pdf";
-      if (nivelLower.includes("bachillerato"))
-        return "/pdfs/bachillerato_req.pdf";
-      if (nivelLower.includes("licenciatura"))
-        return "/pdfs/licenciatura_req.pdf";
-      if (nivelLower.includes("posgrado")) return "/pdfs/posgrado_req.pdf";
-
-      return "";
-    }
-
-    async cargarPDF(ruta) {
-      try {
-        const response = await fetch(ruta);
-        if (!response.ok) {
-          throw new Error(`Error ${response.status} al cargar ${ruta}`);
-        }
-        return await response.arrayBuffer();
-      } catch (error) {
-        console.error(`Error cargando ${ruta}:`, error);
-        return null;
-      }
-    }
-
-    async rellenarCampos(page, datos, font) {
-      const { rgb } = await import("pdf-lib");
-
-      for (const [campo, valor] of Object.entries(datos)) {
-        if (this.coordenadas[campo] && valor) {
-          let textoValor = valor.toString();
-
-          if (campo === "año" && textoValor.length === 4) {
-            textoValor = textoValor.slice(2);
-          }
-
-          try {
-            page.drawText(textoValor, {
-              x: this.coordenadas[campo].x,
-              y: this.coordenadas[campo].y,
-              size: 10,
-              font,
-              color: rgb(0, 0, 0),
-            });
-          } catch (error) {
-            console.warn(`Error escribiendo campo ${campo}`);
-          }
-        }
-      }
-    }
-
-    async marcarCheckboxes(page, medios, fontBold) {
-      const { rgb } = await import("pdf-lib");
-
-      if (!medios?.length) return;
-
-      medios.forEach((medio) => {
-        if (this.coordenadasMedios[medio]) {
-          try {
-            page.drawText("X", {
-              x: this.coordenadasMedios[medio].x,
-              y: this.coordenadasMedios[medio].y,
-              size: 12,
-              font: fontBold,
-              color: rgb(0, 0, 0),
-            });
-          } catch (error) {
-            console.warn(`Error marcando checkbox ${medio}`);
-          }
-        }
-      });
-    }
-
-    async agregarFirma(page, pdfDoc, firmaBase64) {
-      if (!firmaBase64) return;
-
-      try {
-        const firmaImage = await pdfDoc.embedPng(firmaBase64);
-        page.drawImage(firmaImage, {
-          x: 255,
-          y: 4,
-          width: 150,
-          height: 75,
-        });
-      } catch (error) {
-        console.warn("Error procesando firma");
-      }
-    }
-
-    descargarPDF(pdfBytes, nombreArchivo) {
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-
-      a.href = url;
-      a.download = nombreArchivo;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "Inscripcion_UNE.pdf";
+      link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      status.textContent = "Se ha iniciado la descarga de tu PDF.";
+    } catch (error) {
+      console.error("Error al generar PDF:", error instanceof Error ? error.message : "Error desconocido");
+      status.textContent = "No se pudo generar el PDF. Tus datos permanecen en el formulario.";
+    } finally {
+      mostrarCarga(pdfButton, false, "Descargar PDF");
+      submit.disabled = false;
     }
-
-    validarCamposObligatorios(datos) {
-      const camposObligatorios = [
-        { campo: "apellidoPaterno", nombre: "Apellido Paterno" },
-        { campo: "apellidoMaterno", nombre: "Apellido Materno" },
-        { campo: "nombres", nombre: "Nombre(s)" },
-        { campo: "calleNumero", nombre: "Calle y Número" },
-        { campo: "codigoPostal", nombre: "Código Postal" },
-        { campo: "municipio", nombre: "Municipio" },
-        { campo: "estado", nombre: "Estado" },
-        { campo: "pais", nombre: "País" },
-        { campo: "telefono", nombre: "Teléfono" },
-        { campo: "celular", nombre: "Celular" },
-        { campo: "correo", nombre: "Correo Electrónico" },
-        { campo: "fechaNacimiento", nombre: "Fecha de Nacimiento" },
-        { campo: "edad", nombre: "Edad" },
-        { campo: "sexo", nombre: "Sexo" },
-        { campo: "estadoCivil", nombre: "Estado Civil" },
-        { campo: "nacionalidad", nombre: "Nacionalidad" },
-        { campo: "ocupacion", nombre: "Ocupación" },
-        { campo: "curp", nombre: "CURP" },
-        { campo: "tipoSangre", nombre: "Tipo de Sangre" },
-        { campo: "plantel", nombre: "Plantel" },
-        { campo: "turno", nombre: "Turno" },
-        { campo: "escuelaProcedencia", nombre: "Escuela de Procedencia" },
-        { campo: "carrera", nombre: "Carrera" },
-        { campo: "asesor", nombre: "Asesor" },
-        { campo: "nombrePadreTutor", nombre: "Nombre del Padre/Tutor" },
-        { campo: "ocupacionPadre", nombre: "Ocupación del Padre" },
-        { campo: "domicilioPadre", nombre: "Domicilio del Padre" },
-        { campo: "telefonoPadre", nombre: "Teléfono del Padre" },
-        { campo: "celularPadre", nombre: "Celular del Padre" },
-        { campo: "dia", nombre: "Día" },
-        { campo: "mes", nombre: "Mes" },
-        { campo: "año", nombre: "Año" },
-      ];
-
-      const camposFaltantes = [];
-
-      camposObligatorios.forEach(({ campo, nombre }) => {
-        if (!datos[campo] || datos[campo].toString().trim() === "") {
-          camposFaltantes.push(nombre);
-        }
-      });
-
-      if (camposFaltantes.length > 0) {
-        const mensaje = `Por favor complete los siguientes campos obligatorios:\n\n• ${camposFaltantes.join("\n• ")}`;
-        this.mostrarEstadoPDF("Revisa los datos", mensaje);
-        return false;
-      }
-
-      return true;
-    }
-
-    async generar() {
-      if (this.generando) return false;
-      try {
-        const datos = this.recolectarDatos();
-
-        if (!this.validarCamposObligatorios(datos)) {
-          return false;
-        }
-
-        this.generando = true;
-        this.boton.disabled = true;
-        this.mostrarEstadoPDF(
-          "Generando PDF…",
-          "Estamos preparando tu documento. Espera un momento.",
-          true,
-        );
-        // Permite pintar el diálogo antes de comenzar a procesar el documento.
-        await new Promise((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(resolve));
-        });
-
-        const { PDFDocument, StandardFonts } = await import("pdf-lib");
-
-        const inscripcionBytes = await this.cargarPDF("/pdfs/INSCRIPCION.pdf");
-        if (!inscripcionBytes) {
-          throw new Error("No se pudo cargar la plantilla de inscripción");
-        }
-
-        const pdfDoc = await PDFDocument.load(inscripcionBytes);
-
-        const requisitosPath = this.determinarRequisitos(datos.carrera || "");
-        if (requisitosPath) {
-          const requisitosBytes = await this.cargarPDF(requisitosPath);
-          if (requisitosBytes) {
-            const requisitosDoc = await PDFDocument.load(requisitosBytes);
-            const requisitosPages = await pdfDoc.copyPages(
-              requisitosDoc,
-              requisitosDoc.getPageIndices(),
-            );
-            requisitosPages.forEach((page) => pdfDoc.addPage(page));
-          }
-        }
-
-        const pages = pdfDoc.getPages();
-        const firstPage = pages[0];
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-        await this.rellenarCampos(firstPage, datos, font);
-        await this.marcarCheckboxes(
-          firstPage,
-          datos.mediosSeleccionados,
-          fontBold,
-        );
-        await this.agregarFirma(firstPage, pdfDoc, datos.firmaImagen);
-
-        const pdfBytes = await pdfDoc.save();
-        const nombreArchivo =
-          `Inscripcion_UNE_${datos.nombres || "Formulario"}.pdf`.replace(
-            /\s+/g,
-            "_",
-          );
-
-        this.descargarPDF(pdfBytes, nombreArchivo);
-        this.mostrarEstadoPDF(
-          "PDF generado",
-          "Se ha iniciado la descarga de tu documento.",
-        );
-
-        return true;
-      } catch (error) {
-        console.error("Error al generar PDF:", error);
-        this.mostrarEstadoPDF(
-          "No se pudo generar el PDF",
-          "Ocurrió un error al preparar el documento. Vuelve a intentarlo.",
-        );
-        return false;
-      } finally {
-        this.generando = false;
-        this.boton.disabled = false;
-        document.getElementById("progreso-generacion-pdf").hidden = true;
-      }
-    }
-  }
-
-  new GeneradorPDFInscripcion();
+  });
 </script>

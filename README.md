@@ -4,14 +4,14 @@ Aplicación web para capturar datos de inscripción de aspirantes de Universidad
 
 ## Funcionalidades
 
-- Captura de datos personales, domicilio, contacto, información académica y datos del padre o tutor.
-- Selección de medios de contacto y razones para elegir la universidad.
-- Captura de firma manuscrita y descarga del formato de inscripción en PDF.
+- Captura de las 11 preguntas actuales de Google Forms, todas obligatorias.
+- Género con Otro, medios con selección múltiple y Otro, y compromiso institucional con Sí o No.
+- Descarga de un PDF con las nuevas preguntas y respuestas.
 - Validación de datos en el navegador y en el servidor.
 - Envío a Google Forms con mensajes de progreso, confirmación y error.
 - Redirección a `/gracias` cuando el servidor confirma el registro.
 
-La descarga del PDF y el envío del formulario son acciones independientes. La firma y el PDF no se guardan en Google Forms; el receptor registra únicamente los campos con una pregunta de destino configurada.
+La descarga del PDF y el envío del formulario son acciones independientes. El PDF no se guarda en Google Forms; el receptor registra únicamente los campos con una pregunta de destino configurada.
 
 ## Tecnologías
 
@@ -77,7 +77,7 @@ Abre la dirección indicada por el servidor, normalmente `http://localhost:4321`
 
 1. El aspirante completa el formulario en `/` o `/formulario-inscripcion`.
 2. El navegador envía los datos como JSON a `POST /api/forms/inscripcion`.
-3. Astro valida los campos y adapta las opciones al catálogo de Google Forms.
+3. Astro valida los campos y conserva las opciones del catálogo de Google Forms.
 4. El servidor envía los datos y la clave compartida a Apps Script.
 5. Apps Script crea la respuesta en Google Forms y devuelve la confirmación.
 6. Astro confirma el resultado al navegador, que redirige a `/gracias`.
@@ -98,7 +98,7 @@ public/
 src/
   assets/                          Recursos importados por los componentes
   components/
-    inscripcion/Form.astro         Formulario, firma, envío y generación de PDF
+    inscripcion/Form.astro         Formulario, envío y generación de PDF
     layout/header.astro            Encabezado
   layouts/Layout.astro             Plantilla general de las páginas
   pages/
@@ -166,8 +166,8 @@ El despliegue requiere un entorno Node.js para atender el endpoint de inscripci�
 
 ## Mantenimiento y consideraciones
 
-- **Campos y opciones:** mantén sincronizados el formulario, `src/server/inscripcion.js`, el receptor de Apps Script y las preguntas de Google Forms. Carrera, asesor y otros campos sin mapeo no se registran en Google Forms.
-- **Plantillas PDF:** modifica los archivos de `public/pdfs/`. Si cambia su diseño, revisa también las coordenadas utilizadas por el generador en `Form.astro`.
+- **Campos y opciones:** mantén sincronizados el formulario, `src/server/inscripcion.js`, el receptor de Apps Script y las preguntas de Google Forms. El contrato actual y la tabla de IDs están en `apps-script/README.md`.
+- **PDF:** el generador de `Form.astro` crea un resumen de las preguntas actuales. Las plantillas anteriores se conservan en `public/pdfs/` como archivos de referencia.
 - **Envíos sin confirmación:** no hay reintentos automáticos ni garantía de deduplicación. Si ocurre un timeout, verifica si la respuesta se guardó antes de repetir el envío.
 - **Cambios en Apps Script:** publica una nueva versión de la implementación después de modificar el receptor.
 

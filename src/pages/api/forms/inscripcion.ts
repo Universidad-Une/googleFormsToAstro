@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { validarInscripcion } from "../../../server/inscripcion.js";
+import { CAMPOS_INSCRIPCION, validarInscripcion } from "../../../server/inscripcion.js";
 
 export const prerender = false;
 const json = (body: unknown, status: number) =>
@@ -82,10 +82,26 @@ export const POST: APIRoute = async ({ request }) => {
         },
         400,
       );
+    const schema = result.schema;
+    const campoSchema = schema && CAMPOS_INSCRIPCION.find(
+      ([campo, id]) => campo === schema.field && id === schema.id,
+    );
+    const detalleSchema = campoSchema &&
+      ["TEXT", "LIST", "MULTIPLE_CHOICE", "CHECKBOX", "DATE", "PARAGRAPH_TEXT"].includes(schema.expected) &&
+      ["TEXT", "LIST", "MULTIPLE_CHOICE", "CHECKBOX", "DATE", "PARAGRAPH_TEXT", "MISSING"].includes(schema.actual)
+      ? ` Pregunta: ${campoSchema[4]} (ID ${campoSchema[1]}). Tipo esperado por Apps Script publicado: ${schema.expected}; tipo encontrado: ${schema.actual}.`
+      : "";
+    const erroresReceptor: Record<string, string> = {
+      UNAUTHORIZED: "UNAUTHORIZED: la clave no coincide con SHARED_SECRET en Apps Script.",
+      SERVER_NOT_CONFIGURED: "SERVER_NOT_CONFIGURED: revisa FORM_ID y SHARED_SECRET en las propiedades de Apps Script.",
+      FORM_SCHEMA_CHANGED: "FORM_SCHEMA_CHANGED: los IDs o tipos de preguntas no coinciden con el formulario de Google." + detalleSchema,
+      FORM_CLOSED: "FORM_CLOSED: el formulario de Google no acepta respuestas.",
+      FORM_SUBMISSION_FAILED: "FORM_SUBMISSION_FAILED: Apps Script falló al abrir el formulario o guardar la respuesta. Revisa FORM_ID y los permisos de la implementación.",
+    };
     return json(
       {
         success: false,
-        message:
+        message: erroresReceptor[result.error] ||
           "Google Forms no confirmó el registro. Revisa la configuración del receptor.",
       },
       502,
