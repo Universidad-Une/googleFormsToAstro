@@ -23,22 +23,24 @@ const CAMPOS_INSCRIPCION = [
       "Maestría en Educación",
     ],
   ],
-  ["apellidoPaterno", 93731934, "TEXT", true, "Apellido paterno"],
-  ["apellidoMaterno", 1095444030, "TEXT", true, "Apellido materno"],
   ["nombres", 1546505808, "TEXT", true, "Nombre(s)"],
   [
-    "genero",
-    2083931233,
-    "MULTIPLE_CHOICE",
+    "edad",
+    850160784,
+    "TEXT",
     true,
-    "Genero",
-    ["Mujer", "Hombre", "Prefiero no decirlo"],
-    true,
+    "Edad",
+    [
+      "Menos de 18 años",
+      "18 a 24 años",
+      "25 a 34 años",
+      "35 a 44 años",
+      "45 a 54 años",
+      "55 años o más",
+    ],
   ],
-  ["edad", 850160784, "TEXT", true, "Edad"],
   ["telefonoContacto", 264053788, "TEXT", true, "Teléfono"],
   ["correo", 60807460, "TEXT", true, "Correo electrónico"],
-  ["ciudadEstado", 1996820764, "TEXT", true, "Ciudad y Estado"],
   [
     "mediosSeleccionados",
     590824040,
@@ -116,7 +118,9 @@ function validarDatosInscripcion_(datos) {
       if (obligatorio && !valor) errores[campo] = "REQUIRED";
       else if (valor.length > 500) errores[campo] = "TOO_LONG";
       else if (
-        (campo === "programaAcademico" || tipo === "MULTIPLE_CHOICE" || tipo === "LIST") &&
+        (campo === "programaAcademico" ||
+          tipo === "MULTIPLE_CHOICE" ||
+          tipo === "LIST") &&
         !permiteOtro &&
         !opciones.includes(valor)
       )
@@ -127,9 +131,13 @@ function validarDatosInscripcion_(datos) {
     errores.correo = "INVALID_EMAIL";
   if (
     valores.edad &&
-    (!/^\d{1,3}$/.test(valores.edad) || Number(valores.edad) > 120)
+    !CAMPOS_INSCRIPCION.find(([campo]) => campo === "edad")[5].includes(
+      valores.edad,
+    )
   )
     errores.edad = "INVALID_AGE";
+  if (valores.telefonoContacto && !/^[0-9]{10}$/.test(valores.telefonoContacto))
+    errores.telefonoContacto = "INVALID_PHONE";
   return { valores, errores };
 }
 
@@ -183,25 +191,34 @@ function doPost(e) {
         return respuestaJson_({
           success: false,
           error: "FORM_SCHEMA_CHANGED",
-          schema: { field: campo, id, expected: tipo, actual: item ? String(item.getType()) : "MISSING" },
+          schema: {
+            field: campo,
+            id,
+            expected: tipo,
+            actual: item ? String(item.getType()) : "MISSING",
+          },
         });
       }
       const pregunta =
         tipo === "LIST"
           ? item.asListItem()
           : tipo === "TEXT"
-          ? item.asTextItem()
-          : tipo === "DATE"
-            ? item.asDateItem()
-            : tipo === "CHECKBOX"
-              ? item.asCheckboxItem()
-              : item.asMultipleChoiceItem();
+            ? item.asTextItem()
+            : tipo === "DATE"
+              ? item.asDateItem()
+              : tipo === "CHECKBOX"
+                ? item.asCheckboxItem()
+                : item.asMultipleChoiceItem();
       const valor = valores[campo];
       if (valor === "" || (Array.isArray(valor) && valor.length === 0)) {
         if (obligatorio || pregunta.isRequired()) errores[campo] = "REQUIRED";
         continue;
       }
-      if (tipo === "CHECKBOX" || tipo === "MULTIPLE_CHOICE" || tipo === "LIST") {
+      if (
+        tipo === "CHECKBOX" ||
+        tipo === "MULTIPLE_CHOICE" ||
+        tipo === "LIST"
+      ) {
         const opciones = pregunta
           .getChoices()
           .map((opcion) => opcion.getValue());
@@ -209,7 +226,10 @@ function doPost(e) {
         const otras = seleccionadas.filter(
           (opcion) => !opciones.includes(opcion),
         );
-        if (otras.length && (tipo === "LIST" || !pregunta.hasOtherOption() || otras.length > 1)) {
+        if (
+          otras.length &&
+          (tipo === "LIST" || !pregunta.hasOtherOption() || otras.length > 1)
+        ) {
           errores[campo] = "INVALID_OPTION";
           continue;
         }

@@ -34,13 +34,17 @@ function fixture() {
           ? ["Facebook"]
           : field === "programaAcademico" || type === "LIST"
             ? context.schema.find((row) => row[0] === field)[5][0]
-          : type === "MULTIPLE_CHOICE"
-            ? field === "compromiso"
-              ? "Sí"
-              : "Mujer"
-            : "Prueba";
+            : type === "MULTIPLE_CHOICE"
+              ? field === "compromiso"
+                ? "Sí"
+                : "Mujer"
+              : "Prueba";
   }
-  Object.assign(data, { correo: "test@example.com", edad: "26" });
+  Object.assign(data, {
+    telefonoContacto: "3311111111",
+    correo: "test@example.com",
+    edad: "25 a 34 años",
+  });
   context.FormApp = {
     openById: () => ({
       isAcceptingResponses: () => true,
@@ -91,9 +95,8 @@ test("new questions submit once with the current phone", () => {
   assert.equal(f.send().success, true);
   assert.equal(f.count(), 1);
 });
-test("Other is accepted for gender and media", () => {
+test("Other is accepted for media", () => {
   const f = fixture();
-  f.data.genero = "Personalizado";
   f.data.mediosSeleccionados = ["Facebook", "Medio personalizado"];
   assert.equal(f.send().success, true);
 });
@@ -121,13 +124,13 @@ test("unauthorized and malformed requests never submit", () => {
   assert.equal(f.count(), 0);
 });
 
-test("stores all 11 answers under the updated IDs", () => {
+test("stores all 7 answers under the updated IDs", () => {
   const f = fixture();
   f.data.telefonoContacto = "3311111111";
   f.data.telefono = "3322222222";
   f.data.compromiso = "No";
   assert.equal(f.send().success, true);
-  assert.equal(f.responses.length, 11);
+  assert.equal(f.responses.length, 7);
   const answers = Object.fromEntries(
     f.responses.map(({ id, value }) => [id, value]),
   );
@@ -136,8 +139,8 @@ test("stores all 11 answers under the updated IDs", () => {
       .map(Number)
       .sort((a, b) => a - b),
     [
-      723568625, 93731934, 1095444030, 1546505808, 2083931233, 850160784,
-      264053788, 60807460, 1996820764, 590824040, 541670431,
+      723568625, 1546505808, 850160784, 264053788, 60807460, 590824040,
+      541670431,
     ].sort((a, b) => a - b),
   );
   assert.equal(answers[723568625], f.data.programaAcademico);
@@ -145,9 +148,7 @@ test("stores all 11 answers under the updated IDs", () => {
   assert.equal(answers[125653479], undefined);
   assert.equal(answers[345860602], undefined);
   assert.equal(answers[60807460], "test@example.com");
-  assert.equal(answers[850160784], "26");
-  assert.equal(answers[1996820764], f.data.ciudadEstado);
-  assert.equal(answers[2083931233], "Mujer");
+  assert.equal(answers[850160784], "25 a 34 años");
   assert.deepEqual(Array.from(answers[590824040]), ["Facebook"]);
   assert.equal(answers[541670431], "No");
 });

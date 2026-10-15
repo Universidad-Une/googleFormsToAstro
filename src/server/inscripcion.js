@@ -23,22 +23,24 @@ export const CAMPOS_INSCRIPCION = [
       "Maestría en Educación",
     ],
   ],
-  ["apellidoPaterno", 93731934, "TEXT", true, "Apellido paterno"],
-  ["apellidoMaterno", 1095444030, "TEXT", true, "Apellido materno"],
   ["nombres", 1546505808, "TEXT", true, "Nombre(s)"],
   [
-    "genero",
-    2083931233,
-    "MULTIPLE_CHOICE",
+    "edad",
+    850160784,
+    "TEXT",
     true,
-    "Genero",
-    ["Mujer", "Hombre", "Prefiero no decirlo"],
-    true,
+    "Edad",
+    [
+      "Menos de 18 años",
+      "18 a 24 años",
+      "25 a 34 años",
+      "35 a 44 años",
+      "45 a 54 años",
+      "55 años o más",
+    ],
   ],
-  ["edad", 850160784, "TEXT", true, "Edad"],
   ["telefonoContacto", 264053788, "TEXT", true, "Teléfono"],
   ["correo", 60807460, "TEXT", true, "Correo electrónico"],
-  ["ciudadEstado", 1996820764, "TEXT", true, "Ciudad y Estado"],
   [
     "mediosSeleccionados",
     590824040,
@@ -120,9 +122,13 @@ function validarDatosInscripcion_(datos) {
     errores.correo = "INVALID_EMAIL";
   if (
     valores.edad &&
-    (!/^\d{1,3}$/.test(valores.edad) || Number(valores.edad) > 120)
+    !CAMPOS_INSCRIPCION.find(([campo]) => campo === "edad")[5].includes(
+      valores.edad,
+    )
   )
     errores.edad = "INVALID_AGE";
+  if (valores.telefonoContacto && !/^[0-9]{10}$/.test(valores.telefonoContacto))
+    errores.telefonoContacto = "INVALID_PHONE";
   return { valores, errores };
 }
 

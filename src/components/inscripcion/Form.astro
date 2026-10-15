@@ -1,230 +1,271 @@
 ---
 import { CAMPOS_INSCRIPCION } from "../../server/inscripcion.js";
 import WelcomeCard from "./WelcomeCard.astro";
-import { LoaderCircle } from "@lucide/astro";
-const grupos = [
-  { titulo: "Datos académicos", campos: ["programaAcademico"] },
-  {
-    titulo: "Datos personales",
-    campos: ["apellidoPaterno", "apellidoMaterno", "nombres", "edad", "genero"],
-  },
-  { titulo: "Datos de domicilio", campos: ["ciudadEstado"] },
-  {
-    titulo: "Datos de contacto",
-    campos: ["telefonoContacto", "correo"],
-  },
-  { titulo: "¿Cómo nos conociste?", campos: ["mediosSeleccionados"] },
-  { titulo: "Compromiso y autorización", campos: ["compromiso"] },
+import {
+  LoaderCircle,
+  ArrowRight,
+  UserRound,
+  GraduationCap,
+  Phone,
+  Mail,
+  UsersRound,
+  ChevronDown,
+} from "@lucide/astro";
+const orden = [
+  "nombres",
+  "programaAcademico",
+  "telefonoContacto",
+  "correo",
+  "edad",
 ];
+const iconos = {
+  nombres: UserRound,
+  programaAcademico: GraduationCap,
+  telefonoContacto: Phone,
+  correo: Mail,
+  edad: UsersRound,
+};
+const campos = orden.map((nombre) =>
+  CAMPOS_INSCRIPCION.find(([campo]) => campo === nombre)!,
+);
+const adicionales = CAMPOS_INSCRIPCION.filter(([campo]) =>
+  ["mediosSeleccionados", "compromiso"].includes(campo),
+);
 ---
 
-<section class="py-16 bg-gray-50">
-  <div class="container mx-auto px-4">
+<section class="inscripcion-backdrop grid min-h-svh items-center px-7 py-12 text-[#10163c] max-[720px]:px-3.5 max-[720px]:py-5">
+  <div class="mx-auto grid w-full max-w-[1160px] grid-cols-[minmax(280px,32%)_minmax(0,1fr)] overflow-hidden rounded-[14px] bg-white shadow-[0_12px_48px_#1c467314] max-[1000px]:grid-cols-[30%_minmax(0,1fr)] max-[720px]:grid-cols-1">
     <WelcomeCard />
-    <form id="formulario-inscripcion" class="max-w-4xl mx-auto space-y-6">
-      {grupos.map((grupo, index) => (
-        <section
-          aria-labelledby={"grupo-" + index}
-          class="bg-white rounded-xl shadow-sm p-6 md:p-8"
-        >
-          <h2
-            id={"grupo-" + index}
-            class="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200"
+    <form
+      id="formulario-inscripcion"
+      class="min-w-0 px-12 pt-[35px] pb-6 max-[1000px]:px-[26px] max-[1000px]:py-8 max-[720px]:px-[22px] max-[720px]:py-7"
+    >
+      <div class="[&_h2]:mb-6 [&_h2]:text-[28px] [&_h2]:leading-[1.2] [&_h2]:font-bold max-[720px]:[&_h2]:text-2xl">
+        <span
+          class="mb-[18px] block h-1 w-[38px] rounded bg-[#0067ff]"
+          aria-hidden="true"
+        ></span>
+        <h2>Datos personales</h2>
+      </div>
+      <div class="grid grid-cols-2 gap-x-5 gap-y-[17px] max-[420px]:grid-cols-1">
+        {campos.map(([campo, id, tipo, obligatorio, titulo, opciones = []]) => {
+          const Icono = iconos[campo as keyof typeof iconos];
+          return (
+            <div
+              class:list={[
+                "[&_label]:mb-[7px] [&_label]:block [&_label]:text-[13px] [&_label]:font-medium",
+                { "col-span-full": campo === "nombres" },
+              ]}
+              data-field={campo}
+              data-type={tipo}
+              data-question-id={id}
+            >
+              <label for={campo}>
+                {titulo} <span class="pl-[3px] text-[#0059ff]">*</span>
+              </label>
+              <div class="control relative flex items-center text-[#7589ba]">
+                <Icono size={21} aria-hidden="true" />
+                {campo === "programaAcademico" || campo === "edad" ? (
+                  <>
+                    <select id={campo} name={campo} required={obligatorio}>
+                      <option value="" disabled selected>
+                        {campo === "edad"
+                          ? "Selecciona un rango de edad"
+                          : "Selecciona tu programa"}
+                      </option>
+                      {opciones.map((opcion) => (
+                        <option value={opcion}>{opcion}</option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      size={17}
+                      class="select-arrow"
+                      aria-hidden="true"
+                    />
+                  </>
+                ) : (
+                  <input
+                    id={campo}
+                    name={campo}
+                    type={
+                      campo === "correo"
+                        ? "email"
+                        : campo === "telefonoContacto"
+                          ? "tel"
+                          : "text"
+                    }
+                    autocomplete={
+                      campo === "nombres"
+                        ? "name"
+                        : campo === "correo"
+                          ? "email"
+                          : campo === "telefonoContacto"
+                            ? "tel"
+                            : "off"
+                    }
+                    placeholder={
+                      campo === "telefonoContacto"
+                        ? "Teléfono o WhatsApp a 10 dígitos"
+                        : campo === "correo"
+                          ? "Tu correo electrónico"
+                          : "Escribe tu nombre completo"
+                    }
+                    inputmode={
+                      campo === "telefonoContacto" ? "numeric" : undefined
+                    }
+                    pattern={
+                      campo === "telefonoContacto" ? "[0-9]{10}" : undefined
+                    }
+                    title={
+                      campo === "telefonoContacto"
+                        ? "Escribe 10 dígitos, sin espacios ni lada internacional."
+                        : undefined
+                    }
+                    maxlength={campo === "telefonoContacto" ? 10 : 500}
+                    required={obligatorio}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {adicionales.map(
+        ([
+          campo,
+          id,
+          tipo,
+          obligatorio,
+          titulo,
+          opciones = [],
+          permiteOtro = false,
+        ]) => (
+          <section
+            class="mt-6 border-t border-[#dce5f4] pt-[13px] [&_h2]:mb-1.5 [&_h2]:text-[17px] [&_h2]:leading-[1.35] [&_h2]:font-bold"
+            data-field={campo}
+            data-type={tipo}
+            data-question-id={id}
+            aria-labelledby={campo + "-heading"}
           >
-            {grupo.titulo}
-          </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {CAMPOS_INSCRIPCION.filter(([campo]) =>
-              grupo.campos.includes(campo),
-            )
-              .sort(
-                ([a], [b]) => grupo.campos.indexOf(a) - grupo.campos.indexOf(b),
-              )
-              .map(
-                ([
-                  campo,
-                  id,
-                  tipo,
-                  obligatorio,
-                  titulo,
-                  opciones = [],
-                  permiteOtro = false,
-                ]) => (
-                  <div
-                    data-field={campo}
-                    data-type={tipo}
-                    data-question-id={id}
-                    class:list={{
-                      "md:col-span-2":
-                        tipo !== "TEXT" || grupo.campos.length === 1,
-                    }}
+            {campo === "compromiso" ? (
+              <>
+                <div class="flex items-baseline gap-2 text-[13px] leading-[1.7] text-[#52658a] [&_label]:cursor-pointer">
+                  <input
+                    id="aceptar-terminos"
+                    name="compromiso"
+                    type="checkbox"
+                    value="Sí"
+                    required={obligatorio}
+                    aria-labelledby="compromiso-heading"
+                  />
+                  <span id="compromiso-heading">
+                    <label for="aceptar-terminos">He leído y acepto los </label>
+                    <button
+                      type="button"
+                      class="inline min-h-auto cursor-pointer rounded-none bg-transparent p-0 text-inherit font-normal text-[#ff2938] underline hover:text-[#d71928]"
+                      id="abrir-terminos"
+                    >
+                      términos y condiciones.
+                    </button>
+                  </span>
+                </div>
+                <dialog
+                  class="m-auto max-h-[80svh] w-[min(560px,calc(100%_-_32px))] overflow-auto rounded-xl border-0 p-7 text-[#344b85] shadow-[0_20px_80px_#001a7133] backdrop:bg-[#071c4b80] [&_p]:mt-4 [&_p]:mb-6 [&_p]:text-sm [&_p]:leading-[1.8]"
+                  id="terminos-dialog"
+                  aria-labelledby="terminos-titulo"
+                >
+                  <h2 id="terminos-titulo">Compromiso y autorización</h2>
+                  <p>{titulo}</p>
+                  <button
+                    type="button"
+                    id="cerrar-terminos"
+                    class="inline-flex min-h-12 cursor-pointer items-center justify-center gap-3 rounded-[7px] bg-[#ff2938] px-7 py-3 text-[13px] font-bold text-white transition-colors duration-200 hover:bg-[#e51e2d] disabled:cursor-wait disabled:opacity-60"
                   >
-                    {campo === "ciudadEstado" ? (
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {[
-                          { nombre: "ciudad", titulo: "Ciudad" },
-                          { nombre: "estado", titulo: "Estado" },
-                        ].map(({ nombre, titulo }) => (
-                          <div>
-                            <label
-                              for={nombre}
-                              class="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                              {titulo} *
-                            </label>
-                            <input
-                              id={nombre}
-                              name={nombre}
-                              type="text"
-                              maxlength="249"
-                              required={obligatorio}
-                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : campo === "programaAcademico" || tipo === "LIST" ? (
-                      <>
-                        <label
-                          for={campo}
-                          class="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                          {titulo} *
-                        </label>
-                        <select
-                          id={campo}
+                    Cerrar
+                  </button>
+                </dialog>
+              </>
+            ) : (
+              <>
+                <h2 id={campo + "-heading"}>
+                  {campo === "compromiso"
+                    ? "Compromiso y autorización"
+                    : "¿Cómo nos conociste?"}
+                </h2>
+                <fieldset class="m-0 min-w-0 border-0 p-0">
+                  <legend class="mb-2.5 text-[11px] leading-[1.55] font-normal whitespace-pre-line text-[#111]">
+                    {titulo} <span class="pl-[3px] text-[#0059ff]">*</span>
+                  </legend>
+                  <div
+                    class:list={[
+                      "choices",
+                      { "media-choices": tipo === "CHECKBOX" },
+                    ]}
+                  >
+                    {opciones.map((opcion, index) => (
+                      <label
+                        class="choice inline-flex min-h-8 cursor-pointer items-center gap-2 text-[13px] font-medium"
+                        for={campo + "-" + index}
+                      >
+                        <input
+                          id={campo + "-" + index}
                           name={campo}
-                          required={obligatorio}
-                          class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="" disabled selected>
-                            Elige
-                          </option>
-                          {opciones.map((opcion) => (
-                            <option value={opcion}>{opcion}</option>
-                          ))}
-                        </select>
-                      </>
-                    ) : tipo === "TEXT" ? (
-                      <>
+                          type={tipo === "CHECKBOX" ? "checkbox" : "radio"}
+                          value={opcion}
+                          required={tipo === "MULTIPLE_CHOICE" && obligatorio}
+                        />
+                        <span>{opcion}</span>
+                      </label>
+                    ))}
+                    {permiteOtro && (
+                      <div class="flex min-w-0 gap-1.5">
                         <label
-                          for={campo}
-                          class="block text-sm font-medium text-gray-700 mb-2"
+                          class="choice inline-flex min-h-8 cursor-pointer items-center gap-2 text-[13px] font-medium"
+                          for={campo + "-otro"}
                         >
-                          {titulo} *
+                          <input
+                            id={campo + "-otro"}
+                            name={campo}
+                            type="checkbox"
+                            value="__otro__"
+                            data-other-choice
+                          />
+                          <span>Otro</span>
                         </label>
                         <input
-                          id={campo}
-                          name={campo}
-                          type={
-                            campo === "correo"
-                              ? "email"
-                              : campo === "telefonoContacto"
-                                ? "tel"
-                                : "text"
-                          }
-                          inputmode={campo === "edad" ? "numeric" : undefined}
-                          pattern={campo === "edad" ? "[0-9]{1,3}" : undefined}
+                          type="text"
+                          id={campo + "-otro-texto"}
+                          aria-label={"Otra respuesta: " + titulo}
+                          data-other-text
                           maxlength="500"
-                          required={obligatorio}
-                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          disabled
                         />
-                      </>
-                    ) : (
-                      <fieldset>
-                        <legend class="text-sm font-medium text-gray-700 mb-3 whitespace-pre-line">
-                          {titulo} *
-                        </legend>
-                        <div class:list={["flex flex-wrap gap-4", { "md:flex-nowrap md:items-center": campo === "genero" }]}>
-                          {opciones.map((opcion, index) => (
-                            <label
-                              for={campo + "-" + index}
-                              class="flex items-center gap-2"
-                            >
-                              <input
-                                id={campo + "-" + index}
-                                name={campo}
-                                type={
-                                  tipo === "CHECKBOX" ? "checkbox" : "radio"
-                                }
-                                value={opcion}
-                                required={
-                                  tipo === "MULTIPLE_CHOICE" && obligatorio
-                                }
-                              />
-                              <span>{opcion}</span>
-                            </label>
-                          ))}
-                          {permiteOtro && (
-                            <div
-                              class:list={[
-                                "flex items-center gap-2",
-                                campo === "genero"
-                                ? "w-full md:w-[calc(50%+3.75rem)] md:shrink-0"
-                                  : "flex-wrap",
-                              ]}
-                            >
-                              <label
-                                for={campo + "-otro"}
-                                class:list={["flex shrink-0 items-center gap-2", { "w-18": campo === "genero" }]}
-                              >
-                                <input
-                                  id={campo + "-otro"}
-                                  name={campo}
-                                  type={
-                                    tipo === "CHECKBOX" ? "checkbox" : "radio"
-                                  }
-                                  value="__otro__"
-                                  data-other-choice
-                                  required={
-                                    tipo === "MULTIPLE_CHOICE" && obligatorio
-                                  }
-                                />
-                                <span>Otro</span>
-                              </label>
-                              <input
-                                type="text"
-                                id={campo + "-otro-texto"}
-                                aria-label={"Otra respuesta: " + titulo}
-                                data-other-text
-                                maxlength="500"
-                                disabled
-                                class:list={[
-                                  "border border-gray-300 rounded-lg",
-                                  campo === "genero"
-                                    ? "min-w-0 w-0 flex-1 px-4 py-3 focus:ring-2 focus:ring-blue-500"
-                                    : "px-3 py-2",
-                                ]}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </fieldset>
+                      </div>
                     )}
                   </div>
-                ),
-              )}
-          </div>
-        </section>
-      ))}
-      <div class="flex flex-wrap gap-4">
+                </fieldset>
+              </>
+            )}
+          </section>
+        ),
+      )}
+      <div class="mt-6 flex justify-end max-[1000px]:mt-[18px]">
         <button
           type="submit"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 text-white rounded-lg disabled:opacity-50"
+          class="inline-flex min-h-12 cursor-pointer items-center justify-center gap-3 rounded-[7px] bg-[#ff2938] px-7 py-3 text-[13px] font-bold text-white transition-colors duration-200 hover:bg-[#e51e2d] disabled:cursor-wait disabled:opacity-60 w-1/2 max-[420px]:w-full"
         >
-          <LoaderCircle size={20} class="hidden animate-spin" data-loader aria-hidden="true" />
+          <LoaderCircle
+            size={19}
+            class="hidden animate-spin"
+            data-loader
+            aria-hidden="true"
+          />
           <span data-label>Enviar formulario</span>
-        </button>
-        <button
-          type="button"
-          id="btnGenerarPDF"
-          class="inline-flex items-center gap-2 px-6 py-3 border border-blue-700 text-blue-700 rounded-lg disabled:opacity-50"
-        >
-          <LoaderCircle size={20} class="hidden animate-spin" data-loader aria-hidden="true" />
-          <span data-label>Descargar PDF</span>
+          <ArrowRight size={19} aria-hidden="true" />
         </button>
       </div>
       <p
+        class="mt-[18px] text-[13px] text-[#344b85] empty:hidden"
         id="estado-inscripcion"
         role="status"
         aria-live="polite"
@@ -235,44 +276,83 @@ const grupos = [
 </section>
 
 <style>
-  form {
-    --color-check: #0069ef;
+  .inscripcion-backdrop {
+    background: radial-gradient(ellipse at 50% 40%, #fff 15%, #f0f6fb 100%);
   }
-
-  input[type="checkbox"] {
-    accent-color: var(--color-check);
+  .control > :global(svg:first-child) {
+    position: absolute;
+    left: 15px;
+    pointer-events: none;
   }
-
-  input[type="radio"] {
+  .control input,
+  select {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    border: 1px solid #d2ddf1;
+    border-radius: 6px;
+    background: #fcfdff;
+    padding: 0 14px 0 48px;
+    font: inherit;
+    font-size: 12px;
+    color: #344b85;
+  }
+  select {
     appearance: none;
+    padding-right: 32px;
+  }
+  .control :global(.select-arrow) {
+    position: absolute;
+    right: 13px;
+    pointer-events: none;
+  }
+  input:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
+    outline: 3px solid #0069ef50;
+    outline-offset: 2px;
+  }
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .media-choices .choice {
+    border: 1px solid #d8e2f4;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 10px;
+    color: #344b85;
+  }
+  .media-choices .choice:has(input:checked) {
+    background: #edf4ff;
+    border-color: #4489ff;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 15px;
+    height: 15px;
+    accent-color: #0069ff;
     flex-shrink: 0;
-    width: 1rem;
-    height: 1rem;
     margin: 0;
-    border: 1px solid #6b7280;
-    border-radius: 3px;
-    background-color: white;
-    cursor: pointer;
   }
-
-  input[type="radio"]:checked {
-    border-color: var(--color-check);
-    background-color: var(--color-check);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 8 3 3 7-7' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  input[type="radio"] {
+    width: 19px;
+    height: 19px;
   }
-
-  input[type="radio"]:focus-visible {
-    outline: 2px solid var(--color-check);
-    outline-offset: 3px;
+  .choices:not(.media-choices) {
+    gap: 26px;
   }
-
-  @media (forced-colors: active) {
-    input[type="radio"]:checked {
-      background-color: Highlight;
-      border-color: Highlight;
-      background-image: none;
-      box-shadow: inset 0 0 0 3px Canvas;
-    }
+  [data-other-text] {
+    width: 120px;
+    min-width: 0;
+    border: 1px solid #d2ddf1;
+    border-radius: 6px;
+    padding: 7px;
+    font-size: 11px;
+  }
+  [data-other-text]:disabled {
+    background: #f8faff;
   }
 </style>
 
@@ -287,10 +367,18 @@ const grupos = [
   const submit = form.querySelector<HTMLButtonElement>(
     'button[type="submit"]',
   )!;
-  const pdfButton = form.querySelector<HTMLButtonElement>("#btnGenerarPDF")!;
   const status = document.querySelector<HTMLParagraphElement>(
     "#estado-inscripcion",
   )!;
+
+  const termsDialog =
+    form.querySelector<HTMLDialogElement>("#terminos-dialog")!;
+  form
+    .querySelector("#abrir-terminos")!
+    .addEventListener("click", () => termsDialog.showModal());
+  form
+    .querySelector("#cerrar-terminos")!
+    .addEventListener("click", () => termsDialog.close());
 
   function sincronizarOpciones() {
     for (const group of form.querySelectorAll<HTMLElement>("[data-field]")) {
@@ -327,16 +415,9 @@ const grupos = [
     const data: Record<string, string | string[]> = {};
     for (const group of form.querySelectorAll<HTMLElement>("[data-field]")) {
       const campo = group.dataset.field!;
-      if (campo === "ciudadEstado") {
-        const ciudad = group
-          .querySelector<HTMLInputElement>('[name="ciudad"]')!
-          .value.trim();
-        const estado = group
-          .querySelector<HTMLInputElement>('[name="estado"]')!
-          .value.trim();
-        data[campo] = ciudad + ", " + estado;
-      } else if (
+      if (
         campo === "programaAcademico" ||
+        campo === "edad" ||
         group.dataset.type === "LIST"
       ) {
         data[campo] = group.querySelector<HTMLSelectElement>("select")!.value;
@@ -372,7 +453,11 @@ const grupos = [
     }
     return data;
   }
-  function mostrarCarga(button: HTMLButtonElement, loading: boolean, label: string) {
+  function mostrarCarga(
+    button: HTMLButtonElement,
+    loading: boolean,
+    label: string,
+  ) {
     button.disabled = loading;
     button.setAttribute("aria-busy", String(loading));
     button.querySelector("[data-loader]")!.classList.toggle("hidden", !loading);
@@ -381,11 +466,10 @@ const grupos = [
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (submit.disabled || pdfButton.disabled) return;
+    if (submit.disabled) return;
     const data = datosValidos();
     if (!data) return;
     mostrarCarga(submit, true, "Enviando…");
-    pdfButton.disabled = true;
     status.textContent = "Estamos guardando tu inscripción. Espera un momento.";
     try {
       const response = await fetch("/api/forms/inscripcion", {
@@ -399,7 +483,8 @@ const grupos = [
       });
       const result = await response.json();
       if (response.ok && result.success === true) {
-        status.textContent = "Tu solicitud se registró correctamente. Redirigiendo…";
+        status.textContent =
+          "Tu solicitud se registró correctamente. Redirigiendo…";
         window.location.assign("/gracias");
         return;
       }
@@ -411,36 +496,6 @@ const grupos = [
         "No pudimos confirmar el registro. Verifica si se guardó antes de repetir el envío.";
     }
     mostrarCarga(submit, false, "Enviar formulario");
-    pdfButton.disabled = false;
     status.focus();
-  });
-
-  pdfButton.addEventListener("click", async () => {
-    if (pdfButton.disabled || submit.disabled) return;
-    const data = datosValidos();
-    if (!data) return;
-    mostrarCarga(pdfButton, true, "Generando PDF…");
-    submit.disabled = true;
-    status.textContent = "Estamos preparando tu PDF.";
-    try {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-      const { generarPdfInscripcion } = await import("./pdf.js");
-      const bytes = await generarPdfInscripcion(data, CAMPOS_INSCRIPCION);
-      const url = URL.createObjectURL(
-        new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
-      );
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "Inscripcion_UNE.pdf";
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      status.textContent = "Se ha iniciado la descarga de tu PDF.";
-    } catch (error) {
-      console.error("Error al generar PDF:", error instanceof Error ? error.message : "Error desconocido");
-      status.textContent = "No se pudo generar el PDF. Tus datos permanecen en el formulario.";
-    } finally {
-      mostrarCarga(pdfButton, false, "Descargar PDF");
-      submit.disabled = false;
-    }
   });
 </script>

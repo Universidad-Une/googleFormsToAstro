@@ -5,10 +5,12 @@ import Footer from "../components/layout/footer.astro";
 
 interface Props {
   title?: string;
+  compact?: boolean;
   description?: string;
 }
 
 const {
+  compact = false,
   title = "Formulario de inscripción UNE",
   description = "Completa tu solicitud de inscripción a Universidad UNE.",
 } = Astro.props;
@@ -28,6 +30,6 @@ const {
     <main id="main-content">
       <slot />
     </main>
-    <Footer />
+    {!compact && <Footer />}
   </body>
 </html>

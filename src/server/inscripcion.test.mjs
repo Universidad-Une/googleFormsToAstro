@@ -3,14 +3,10 @@ import assert from "node:assert/strict";
 import { CAMPOS_INSCRIPCION, validarInscripcion } from "./inscripcion.js";
 const valid = () => ({
   programaAcademico: "Lic. en Administración",
-  apellidoPaterno: "Pérez",
-  apellidoMaterno: "López",
   nombres: "Ana",
-  genero: "Mujer",
-  edad: "26",
+  edad: "25 a 34 años",
   telefonoContacto: "3311111111",
   correo: "prueba@example.com",
-  ciudadEstado: "Guadalajara, Jalisco",
   mediosSeleccionados: ["Facebook"],
   compromiso: "Sí",
 });
@@ -19,10 +15,14 @@ test("conserva las nuevas respuestas y elimina campos anteriores", () => {
     ...valid(),
     calleNumero: "omitida",
     secret: "omitido",
+    genero: "omitido",
+    ciudadEstado: "omitido",
+    apellidoPaterno: "omitido",
+    apellidoMaterno: "omitido",
   });
   assert.deepEqual(errors, {});
   assert.deepEqual(data, valid());
-  assert.equal(CAMPOS_INSCRIPCION.length, 11);
+  assert.equal(CAMPOS_INSCRIPCION.length, 7);
 });
 test("todos los campos son obligatorios", () => {
   for (const [field, , type] of CAMPOS_INSCRIPCION) {
@@ -43,7 +43,6 @@ test("admite Otro, nueve medios más Otro y ambas respuestas de compromiso", () 
     assert.deepEqual(
       validarInscripcion({
         ...valid(),
-        genero: "Personalizado",
         mediosSeleccionados: [...opciones, "Otro medio"],
         compromiso,
       }).errors,
@@ -74,4 +73,25 @@ test("rechaza listas inválidas, duplicados, varios Otros y compromiso desconoci
     "INVALID_AGE",
   );
   assert.ok(validarInscripcion(null).errors.formulario);
+});
+
+test("acepta todos los rangos de edad y exige teléfono de diez dígitos", () => {
+  for (const edad of CAMPOS_INSCRIPCION.find(
+    ([campo]) => campo === "edad",
+  )[5]) {
+    assert.deepEqual(validarInscripcion({ ...valid(), edad }).errors, {});
+  }
+  for (const telefonoContacto of [
+    "123456789",
+    "12345678901",
+    "+523311111111",
+    "abcdefghij",
+    "331 111111",
+  ]) {
+    assert.equal(
+      validarInscripcion({ ...valid(), telefonoContacto }).errors
+        .telefonoContacto,
+      "INVALID_PHONE",
+    );
+  }
 });

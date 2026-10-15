@@ -1,19 +1,39 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Gotham Black";
-  src: url("/fonts/Gotham Black.otf") format("truetype");
-  font-weight: 400;
+  font-family: "Montserrat";
+  src: url("/fonts/Montserrat/Montserrat-Variable.ttf") format("truetype");
   font-style: normal;
+  font-weight: 100 900;
   font-display: swap;
 }
 
 @theme {
-  --font-sans: "Gotham Black", ui-sans-serif, system-ui, Arial, sans-serif;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, Arial, sans-serif;
   --color-rojo-une: #e22319;
   --color-azul-une: #001a71;
 }
 
 #firmaCanvas {
   touch-action: none;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    font-weight: 400;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  p,
+  legend {
+    font-weight: 400;
+    line-height: 1.7;
+  }
 }
