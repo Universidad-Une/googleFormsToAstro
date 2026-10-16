@@ -1,6 +1,6 @@
 # Receptor de inscripción
 
-Astro recibe JSON en `POST /api/forms/inscripcion`, valida los datos y llama a Apps Script desde el servidor. El contrato contiene las 11 preguntas actualizadas; todas son obligatorias.
+Astro recibe JSON en `POST /api/forms/inscripcion`, valida los datos y llama a Apps Script desde el servidor. El contrato contiene las 7 preguntas actualizadas; todas son obligatorias.
 
 ## Configuración
 
@@ -17,25 +17,20 @@ Desarrollo: `npm run dev -- --background`. Compilación: `npm run build`.
 | Campo JSON          | ID         | Pregunta                                                                                                 | Tipo            |
 | ------------------- | ---------- | -------------------------------------------------------------------------------------------------------- | --------------- |
 | programaAcademico   | 723568625  | Programa Académico de interés:                                                                           | TEXT            |
-| apellidoPaterno     | 93731934   | Apellido paterno                                                                                         | TEXT            |
-| apellidoMaterno     | 1095444030 | Apellido materno                                                                                         | TEXT            |
 | nombres             | 1546505808 | Nombre(s)                                                                                                | TEXT            |
-| genero              | 2083931233 | Genero                                                                                                   | MULTIPLE_CHOICE |
-| edad                | 850160784  | Edad                                                                                                     | TEXT            |
+| edad                | 850160784  | Edad                                                                                                     | MULTIPLE_CHOICE |
 | telefonoContacto    | 264053788  | Teléfono                                                                                                 | TEXT            |
 | correo              | 60807460   | Correo electrónico                                                                                       | TEXT            |
-| ciudadEstado        | 1996820764 | Ciudad y Estado                                                                                          | TEXT            |
 | mediosSeleccionados | 590824040  | Medio por el que te enteraste de la Universidad Nos gustaría llegar a más personas, ¿Cómo llegamos a ti? | CHECKBOX        |
 | compromiso          | 541670431  | Compromiso institucional y autorización de datos (texto completo en el contrato)                         | MULTIPLE_CHOICE |
 
 Los IDs son IDs de preguntas de Apps Script, no parámetros `entry.*`. El único Teléfono se envía en `telefonoContacto` con ID `264053788`; la referencia anterior `125653479` se descarta.
 
-- Texto: strings de hasta 500 caracteres; correo válido y edad de 0 a 120.
-- Género: `Mujer`, `Hombre`, `Prefiero no decirlo` o una respuesta personalizada de Otro.
+- Texto: strings de hasta 500 caracteres; correo válido y teléfono de exactamente 10 dígitos.
+- Edad: `MULTIPLE_CHOICE`, sin Otro. Valores exactos: `18 - 24`, `25 - 34`, `35 - 44`, `45 - 54`, `55 +`.
 - Medios: lista obligatoria de una o más selecciones, sin duplicados. Catálogo: Facebook, Instragram, Televisión, Radio, Espectacular, Recomendación, Sesión, Expos o Ferias, Volanteo o Activación, Soy Ex alumno. Se permite una respuesta adicional de Otro (máximo diez valores). `Instragram` conserva la escritura de Forms.
 - Compromiso: `Sí` o `No`; ambas respuestas son válidas.
 - Los campos anteriores sin pregunta de destino se descartan.
-- El PDF descarga un resumen de las nuevas preguntas y respuestas; ya no usa las coordenadas de la plantilla anterior ni solicita firma. Descargarlo no registra una respuesta en Forms.
 
 ## Ejemplo de petición del servidor
 
@@ -43,15 +38,11 @@ Los IDs son IDs de preguntas de Apps Script, no parámetros `entry.*`. El único
 {
   "secret": "CLAVE_SOLO_DEL_SERVIDOR",
   "data": {
-    "programaAcademico": "Licenciatura",
-    "apellidoPaterno": "Prueba",
-    "apellidoMaterno": "Prueba",
+    "programaAcademico": "Lic. en Administración",
     "nombres": "Registro de prueba",
-    "genero": "Mujer",
-    "edad": "26",
+    "edad": "25 - 34",
     "telefonoContacto": "3311111111",
     "correo": "prueba@example.com",
-    "ciudadEstado": "Guadalajara, Jalisco",
     "mediosSeleccionados": ["Facebook"],
     "compromiso": "Sí"
   }

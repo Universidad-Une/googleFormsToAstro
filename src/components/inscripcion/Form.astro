@@ -67,7 +67,12 @@ const adicionales = CAMPOS_INSCRIPCION.filter(([campo]) =>
                 <Icono size={21} aria-hidden="true" />
                 {campo === "programaAcademico" || campo === "edad" ? (
                   <>
-                    <select id={campo} name={campo} required={obligatorio}>
+                    <select
+                      id={campo}
+                      name={campo}
+                      required={obligatorio}
+                      aria-describedby={campo + "-error"}
+                    >
                       <option value="" disabled selected>
                         {campo === "edad"
                           ? "Selecciona un rango de edad"
@@ -87,6 +92,7 @@ const adicionales = CAMPOS_INSCRIPCION.filter(([campo]) =>
                   <input
                     id={campo}
                     name={campo}
+                    aria-describedby={campo + "-error"}
                     type={
                       campo === "correo"
                         ? "email"
@@ -126,6 +132,12 @@ const adicionales = CAMPOS_INSCRIPCION.filter(([campo]) =>
                   />
                 )}
               </div>
+              <p
+                id={campo + "-error"}
+                data-field-error
+                class="mt-1.5 text-xs leading-relaxed text-red-600 empty:hidden"
+                aria-live="polite"
+              ></p>
             </div>
           );
         })}
@@ -193,7 +205,7 @@ const adicionales = CAMPOS_INSCRIPCION.filter(([campo]) =>
                     : "¿Cómo nos conociste?"}
                 </h2>
                 <fieldset class="m-0 min-w-0 border-0 p-0">
-                  <legend class="mb-2.5 text-[11px] leading-[1.55] font-normal whitespace-pre-line text-[#111]">
+                  <legend class="mb-2.5 text-[11px] leading-[1.55] font-normal whitespace-pre-line text-[#526079]">
                     {titulo} <span class="pl-[3px] text-[#0059ff]">*</span>
                   </legend>
                   <div
@@ -301,6 +313,11 @@ const adicionales = CAMPOS_INSCRIPCION.filter(([campo]) =>
     appearance: none;
     padding-right: 32px;
   }
+  .control input[aria-invalid="true"],
+  .control select[aria-invalid="true"] {
+    border-color: #dc2626;
+    background-color: #fff8f8;
+  }
   .control :global(.select-arrow) {
     position: absolute;
     right: 13px;
@@ -380,6 +397,44 @@ const adicionales = CAMPOS_INSCRIPCION.filter(([campo]) =>
     .querySelector("#cerrar-terminos")!
     .addEventListener("click", () => termsDialog.close());
 
+  const mensajes: Record<string, string> = {
+    nombres: "Escribe tu nombre.",
+    programaAcademico: "Selecciona tu programa académico.",
+    edad: "Selecciona un rango de edad.",
+    telefonoContacto:
+      "Escribe un teléfono o WhatsApp de 10 dígitos, sin espacios ni lada internacional.",
+    correo: "Escribe un correo válido, por ejemplo: nombre@dominio.com.",
+  };
+
+  function validarCampo(control: HTMLInputElement | HTMLSelectElement) {
+    const grupo = control.closest<HTMLElement>("[data-field]");
+    const mensaje = grupo?.querySelector<HTMLElement>("[data-field-error]");
+    if (!grupo || !mensaje) return;
+    control.setCustomValidity("");
+    const { errors } = validarInscripcion(recolectar());
+    const invalido =
+      !control.validity.valid || Boolean(errors[grupo.dataset.field!]);
+    const texto = invalido
+      ? mensajes[grupo.dataset.field!] || "Revisa este campo."
+      : "";
+    control.setCustomValidity(texto);
+    control.setAttribute("aria-invalid", String(invalido));
+    mensaje.textContent = texto;
+  }
+
+  for (const grupo of form.querySelectorAll<HTMLElement>("[data-field]")) {
+    if (!grupo.querySelector("[data-field-error]")) continue;
+    const control = grupo.querySelector<HTMLInputElement | HTMLSelectElement>(
+      "input, select",
+    )!;
+    control.addEventListener("blur", () => validarCampo(control));
+    control.addEventListener("change", () => validarCampo(control));
+    control.addEventListener("input", () => {
+      if (control.hasAttribute("aria-invalid")) validarCampo(control);
+    });
+    control.addEventListener("invalid", () => validarCampo(control));
+  }
+
   function sincronizarOpciones() {
     for (const group of form.querySelectorAll<HTMLElement>("[data-field]")) {
       const other = group.querySelector<HTMLInputElement>(
@@ -443,6 +498,11 @@ const adicionales = CAMPOS_INSCRIPCION.filter(([campo]) =>
   }
   function datosValidos() {
     sincronizarOpciones();
+    for (const control of form.querySelectorAll<
+      HTMLInputElement | HTMLSelectElement
+    >("input[aria-describedby], select[aria-describedby]")) {
+      validarCampo(control);
+    }
     if (!form.reportValidity()) return null;
     const { data, errors } = validarInscripcion(recolectar());
     if (Object.keys(errors).length) {

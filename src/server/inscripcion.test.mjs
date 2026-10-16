@@ -4,7 +4,7 @@ import { CAMPOS_INSCRIPCION, validarInscripcion } from "./inscripcion.js";
 const valid = () => ({
   programaAcademico: "Lic. en Administración",
   nombres: "Ana",
-  edad: "25 a 34 años",
+  edad: "25 - 34",
   telefonoContacto: "3311111111",
   correo: "prueba@example.com",
   mediosSeleccionados: ["Facebook"],
@@ -93,5 +93,27 @@ test("acepta todos los rangos de edad y exige teléfono de diez dígitos", () =>
         .telefonoContacto,
       "INVALID_PHONE",
     );
+  }
+});
+
+test("rechaza correos incompletos y acepta direcciones con subdominios", () => {
+  for (const correo of [
+    "sin-arroba.com",
+    "nombre@",
+    "@dominio.com",
+    "nombre@dominio",
+    "nombre apellido@dominio.com",
+    "nombre@@dominio.com",
+  ]) {
+    assert.equal(
+      validarInscripcion({ ...valid(), correo }).errors.correo,
+      "INVALID_EMAIL",
+    );
+  }
+  for (const correo of [
+    "nombre@dominio.com",
+    "nombre.apellido+une@correo.edu.mx",
+  ]) {
+    assert.deepEqual(validarInscripcion({ ...valid(), correo }).errors, {});
   }
 });

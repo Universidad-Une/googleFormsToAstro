@@ -25,9 +25,17 @@ function fixture() {
   };
   runInNewContext(source + "\nthis.schema = CAMPOS_INSCRIPCION;", context);
   const data = {};
-  const types = new Map();
+  // Independent snapshot of the actual Forms schema supplied by the owner.
+  const types = new Map([
+    [723568625, "TEXT"],
+    [1546505808, "TEXT"],
+    [850160784, "MULTIPLE_CHOICE"],
+    [264053788, "TEXT"],
+    [60807460, "TEXT"],
+    [590824040, "CHECKBOX"],
+    [541670431, "MULTIPLE_CHOICE"],
+  ]);
   for (const [field, id, type, required] of context.schema) {
-    types.set(id, type);
     if (required)
       data[field] =
         type === "CHECKBOX"
@@ -35,15 +43,13 @@ function fixture() {
           : field === "programaAcademico" || type === "LIST"
             ? context.schema.find((row) => row[0] === field)[5][0]
             : type === "MULTIPLE_CHOICE"
-              ? field === "compromiso"
-                ? "Sí"
-                : "Mujer"
+              ? context.schema.find((row) => row[0] === field)[5][0]
               : "Prueba";
   }
   Object.assign(data, {
     telefonoContacto: "3311111111",
     correo: "test@example.com",
-    edad: "25 a 34 años",
+    edad: "25 - 34",
   });
   context.FormApp = {
     openById: () => ({
@@ -55,7 +61,7 @@ function fixture() {
             context.schema
               .find((row) => row[1] === id)[5]
               ?.map((value) => ({ getValue: () => value })) || [],
-          hasOtherOption: () => [2083931233, 590824040].includes(id),
+          hasOtherOption: () => id === 590824040,
           createResponse: (value) => ({ id, value }),
         };
         return {
@@ -109,6 +115,10 @@ test("invalid and missing responses never submit", () => {
     { compromiso: "Tal vez" },
     { nombres: "" },
     { correo: "invalid" },
+    { correo: "nombre@dominio" },
+    { correo: "nombre@@dominio.com" },
+    { telefonoContacto: "123456789" },
+    { telefonoContacto: "abcdefghij" },
     { mediosSeleccionados: "Facebook" },
   ]) {
     const f = fixture();
@@ -148,7 +158,22 @@ test("stores all 7 answers under the updated IDs", () => {
   assert.equal(answers[125653479], undefined);
   assert.equal(answers[345860602], undefined);
   assert.equal(answers[60807460], "test@example.com");
-  assert.equal(answers[850160784], "25 a 34 años");
+  assert.equal(answers[850160784], "25 - 34");
   assert.deepEqual(Array.from(answers[590824040]), ["Facebook"]);
   assert.equal(answers[541670431], "No");
+});
+
+test("sends every exact age choice and rejects the previous text ranges", () => {
+  for (const edad of ["18 - 24", "25 - 34", "35 - 44", "45 - 54", "55 +"]) {
+    const f = fixture();
+    f.data.edad = edad;
+    assert.equal(f.send().success, true);
+    assert.equal(f.responses.find(({ id }) => id === 850160784).value, edad);
+  }
+  for (const edad of ["26", "25 a 34 años", "Menos de 18 años", "Otro"]) {
+    const f = fixture();
+    f.data.edad = edad;
+    assert.equal(f.send().error, "INVALID_DATA");
+    assert.equal(f.count(), 0);
+  }
 });
